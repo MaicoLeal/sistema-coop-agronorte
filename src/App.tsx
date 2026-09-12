@@ -18,6 +18,7 @@ import { Sidebar } from './components/Sidebar';
 import { AnimatedLandingPage } from './components/AnimatedLandingPage';
 import { ProducerAvatar } from './components/ProducerAvatar';
 import { ProducerQuickView } from './components/ProducerQuickView';
+import { checkSupabaseConnection } from './services/supabaseClient';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('es-PY'); // Default Spanish of Paraguay
@@ -80,6 +81,9 @@ export default function App() {
 
   useEffect(() => {
     refreshData();
+    void checkSupabaseConnection().then((connected) => {
+      if (!connected) console.warn('Supabase indisponível; o sistema continua no modo local.');
+    });
   }, []);
 
   const handleRoleChange = (role: UserRole) => {
