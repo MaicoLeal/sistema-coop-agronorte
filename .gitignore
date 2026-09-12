@@ -1,0 +1,15 @@
+node_modules/
+.runtime/
+build/
+dist/
+coverage/
+docs/landing-review/
+docs/landing_t*.png
+docs/dashboard_after_enter.png
+docs/home_*.png
+docs/Preview_Tela_Principal_Animada_V2*
+video home/
+.DS_Store
+*.log
+.env*
+!.env.example
