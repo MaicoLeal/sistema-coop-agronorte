@@ -5,6 +5,7 @@ import {
   VoiceAssistantService,
   VoiceAssistantResponse
 } from '../services/voiceAssistantService';
+import { requestLocalFarmerAnswer } from '../services/localAiService';
 import {
   Mic,
   MicOff,
@@ -173,7 +174,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     }
   };
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
     if (!text) return;
 
@@ -188,31 +189,38 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setAvatarState('thinking');
 
-    // Simulate thoughtful latency then respond
-    setTimeout(() => {
-      const response: VoiceAssistantResponse = VoiceAssistantService.answerFarmerQuery(text, lang);
+    let response: VoiceAssistantResponse;
 
-      const mateoMsg: ChatMessage = {
-        id: `mateo-${Date.now()}`,
-        sender: 'mateo',
-        text: response.answerText,
-        speakText: response.speakText,
-        actionType: response.actionType,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+    try {
+      response = await requestLocalFarmerAnswer({
+        query: text,
+        language: lang,
+      });
+    } catch (error) {
+      console.warn('Ollama indisponível; usando respostas locais básicas.', error);
+      response = VoiceAssistantService.answerFarmerQuery(text, lang);
+    }
 
-      setMessages((prev) => [...prev, mateoMsg]);
-      speakText(response.speakText);
+    const mateoMsg: ChatMessage = {
+      id: `mateo-${Date.now()}`,
+      sender: 'mateo',
+      text: response.answerText,
+      speakText: response.speakText,
+      actionType: response.actionType,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
 
-      // Trigger visual action callbacks if requested
-      if (response.actionType === 'open_harvest' && onOpenHarvest) {
-        setTimeout(() => onOpenHarvest(), 2200);
-      } else if (response.actionType === 'open_pest_diagnosis' && onOpenPestDiagnosis) {
-        setTimeout(() => onOpenPestDiagnosis(), 2200);
-      } else if (response.actionType === 'show_greenhouses' && onOpenGreenhouses) {
-        setTimeout(() => onOpenGreenhouses(), 2200);
-      }
-    }, 600);
+    setMessages((prev) => [...prev, mateoMsg]);
+    speakText(response.speakText);
+
+    // Trigger visual action callbacks if requested
+    if (response.actionType === 'open_harvest' && onOpenHarvest) {
+      setTimeout(() => onOpenHarvest(), 2200);
+    } else if (response.actionType === 'open_pest_diagnosis' && onOpenPestDiagnosis) {
+      setTimeout(() => onOpenPestDiagnosis(), 2200);
+    } else if (response.actionType === 'show_greenhouses' && onOpenGreenhouses) {
+      setTimeout(() => onOpenGreenhouses(), 2200);
+    }
   };
 
   const handleClose = () => {

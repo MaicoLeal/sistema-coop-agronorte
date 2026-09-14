@@ -5,7 +5,8 @@ interface LandingSceneProps {
   className?: string;
 }
 
-const SCENE_IMAGE = '/assets/agronorte-reference-hero.jpg';
+const SCENE_IMAGE = '/assets/agronorte-scenic-daylight.jpg';
+const SUNRISE_SECONDS = 8.5;
 
 const VERTEX_SHADER = `
   attribute vec2 a_position;
@@ -16,25 +17,6 @@ const VERTEX_SHADER = `
   }
 `;
 
-const SHADER_AMPLITUDE = {
-  flagPrimaryY: 0.0034,
-  flagDetailY: 0.0008,
-  flagX: 0.00062,
-  cropX: 0.00235,
-  cropY: 0.00075,
-  flagRippleLight: 0.032,
-} as const;
-
-const DESKTOP_SCENE_FOCUS = [0.5, 0.5] as const;
-const MOBILE_SCENE_FOCUS = [0.68, 0.5] as const;
-const COMPACT_SCENE_FOCUS = [0.64, 0.5] as const;
-
-function getSceneFocus(viewportWidth: number): readonly [number, number] {
-  if (viewportWidth <= 420) return COMPACT_SCENE_FOCUS;
-  if (viewportWidth <= 700) return MOBILE_SCENE_FOCUS;
-  return DESKTOP_SCENE_FOCUS;
-}
-
 // All masks use coordinates in the original photograph, not the viewport. This
 // keeps the flag, leaves and sunlight attached to the scene at every aspect ratio.
 const FRAGMENT_SHADER = `
@@ -42,7 +24,6 @@ const FRAGMENT_SHADER = `
   uniform sampler2D u_image;
   uniform vec2 u_resolution;
   uniform vec2 u_imageSize;
-  uniform vec2 u_focus;
   uniform float u_time;
   uniform float u_motion;
   varying vec2 v_uv;
@@ -57,21 +38,17 @@ const FRAGMENT_SHADER = `
     float aspect = u_imageSize.x / u_imageSize.y;
     float viewportAspect = u_resolution.x / u_resolution.y;
     vec2 visible = vec2(min(1.0, viewportAspect / aspect), min(1.0, aspect / viewportAspect));
-    vec2 sourceUv = vec2(v_uv.x, 1.0 - v_uv.y);
-    vec2 cropOrigin = (1.0 - visible) * u_focus;
-    vec2 uv = sourceUv * visible + cropOrigin;
+    vec2 uv = (vec2(v_uv.x, 1.0 - v_uv.y) - 0.5) * visible + 0.5;
     vec3 original = texture2D(u_image, uv).rgb;
     vec2 displacement = vec2(0.0);
 
-    // The pole stays fixed; the cloth breathes gradually toward its free edge.
-    float flag = region(uv, vec2(0.454, 0.078), vec2(0.535, 0.224), 0.004);
-    float flagSpan = smoothstep(0.462, 0.530, uv.x);
-    float flagBody = smoothstep(0.084, 0.096, uv.y) * (1.0 - smoothstep(0.202, 0.220, uv.y));
-    float flagMotion = flag * flagSpan * flagBody;
-    float ripple = sin((uv.x - 0.488) * 320.0 - u_time * 2.6 + uv.y * 7.0);
-    float smallRipple = sin((uv.x - 0.488) * 570.0 - u_time * 3.1 + uv.y * 12.0);
-    displacement.y += (ripple * ${SHADER_AMPLITUDE.flagPrimaryY} + smallRipple * ${SHADER_AMPLITUDE.flagDetailY}) * flagMotion;
-    displacement.x += cos((uv.x - 0.497) * 260.0 - u_time * 2.6) * ${SHADER_AMPLITUDE.flagX} * flagMotion;
+    // The pole stays fixed; the ripple grows towards the flag's free edge.
+    float flag = region(uv, vec2(0.496, 0.361), vec2(0.522, 0.420), 0.003);
+    float freeEdge = smoothstep(0.497, 0.519, uv.x);
+    float ripple = sin((uv.x - 0.497) * 365.0 - u_time * 3.5);
+    float secondRipple = sin((uv.x - 0.497) * 625.0 - u_time * 4.2 + uv.y * 12.0);
+    displacement.y += (ripple * 0.0032 + secondRipple * 0.0008) * freeEdge * flag;
+    displacement.x += cos((uv.x - 0.497) * 290.0 - u_time * 3.5) * 0.0007 * freeEdge * flag;
 
     // Color and position masks leave the greenhouse framing, trays and sensors
     // still. Motion is strongest in the foreground foliage and soft at its edges.
@@ -88,20 +65,46 @@ const FRAGMENT_SHADER = `
     float depth = smoothstep(0.48, 0.96, uv.y);
     float height = smoothstep(0.36, 0.82, uv.y);
     float phase = uv.x * 31.0 + uv.y * 17.0;
-    float gust = 0.76 + 0.24 * sin(u_time * 0.28 + uv.x * 4.0);
-    float broadWind = sin(u_time * 0.78 + phase) * 0.62;
-    float fineWind = sin(u_time * 1.7 - uv.x * 42.0 + uv.y * 25.0) * 0.16;
-    float leafFlutter = cos(u_time * 2.55 + uv.x * 71.0 - uv.y * 37.0) * 0.06;
+    float gust = 0.72 + 0.28 * sin(u_time * 0.38 + uv.x * 5.0);
+    float broadWind = sin(u_time * 1.12 + phase) * 0.72;
+    float fineWind = sin(u_time * 2.35 - uv.x * 47.0 + uv.y * 29.0) * 0.2;
+    float leafFlutter = cos(u_time * 3.15 + uv.x * 83.0 - uv.y * 41.0) * 0.08;
     float breeze = (broadWind + fineWind + leafFlutter) * gust;
-    float plantMotion = plants * (0.30 + depth * 0.70) * (0.42 + height * 0.58);
-    displacement.x += breeze * ${SHADER_AMPLITUDE.cropX} * plantMotion;
-    displacement.y += sin(u_time * 1.05 + uv.x * 20.0 + uv.y * 13.0) * ${SHADER_AMPLITUDE.cropY} * plantMotion;
+    float plantMotion = plants * (0.35 + depth * 0.65) * (0.35 + height * 0.65);
+    displacement.x += breeze * 0.00125 * plantMotion;
+    displacement.y += sin(u_time * 1.48 + uv.x * 22.0 + uv.y * 13.0) * 0.00042 * plantMotion;
 
     vec3 color = texture2D(u_image, clamp(uv + displacement * u_motion, 0.001, 0.999)).rgb;
-    color *= 1.0 + ripple * ${SHADER_AMPLITUDE.flagRippleLight} * flagMotion * u_motion;
+    color *= 1.0 + ripple * 0.035 * flag * freeEdge * u_motion;
 
-    // The reference artwork already contains its finished dawn lighting.
-    // Keep every pixel stable except for the localized flag and crop motion.
+    // A single, gradual sunrise, followed by a steady warm morning light.
+    float progress = clamp(u_time / 8.5, 0.0, 1.0);
+    float dawn = 1.0 - pow(1.0 - progress, 3.0);
+    vec2 sun = vec2(0.452, mix(0.454, 0.375, dawn));
+    vec2 fromSun = (uv - sun) * vec2(aspect, 1.0);
+    float distanceToSun = length(fromSun);
+    float sky = 1.0 - smoothstep(0.436, 0.455, uv.y);
+    color *= mix(vec3(0.72, 0.77, 0.85), vec3(1.045, 1.01, 0.94), dawn);
+
+    // Warm the blue atmospheric pixels near the horizon, while retaining cloud
+    // detail and the neutral greenhouse frames. The upper sky stays softly blue.
+    float blueSky = smoothstep(0.025, 0.18, original.b - original.r)
+      * smoothstep(0.22, 0.55, original.b) * sky * (1.0 - flag);
+    vec2 atmosphereOffset = (uv - vec2(sun.x, 0.422)) / vec2(0.36, 0.21);
+    float atmosphere = exp(-dot(atmosphereOffset, atmosphereOffset));
+    float luminance = dot(original, vec3(0.2126, 0.7152, 0.0722));
+    vec3 morningSky = vec3(1.0, 0.79, 0.56) * mix(0.78, 1.0, luminance);
+    color = mix(color, morningSky, blueSky * atmosphere * (0.08 + dawn * 0.65));
+
+    // Broad atmospheric light and soft lens bloom avoid a drawn disc or radial
+    // spokes. Nested Gaussian falloffs make a luminous, naturally blurred core.
+    float halo = exp(-pow(distanceToSun / 0.145, 2.0)) * sky;
+    float bloom = exp(-pow(distanceToSun / 0.036, 2.0)) * sky;
+    float sunCore = exp(-pow(distanceToSun / 0.009, 2.0)) * sky;
+    float sunlight = 0.28 + dawn * 0.72;
+    color = 1.0 - (1.0 - color) * (1.0 - vec3(1.0, 0.71, 0.39) * halo * 0.24 * sunlight);
+    color = mix(color, vec3(1.0, 0.97, 0.86), bloom * 0.66 * sunlight);
+    color = mix(color, vec3(1.0, 0.995, 0.955), sunCore * 0.98);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -188,7 +191,6 @@ export default function LandingScene({ active, className = '' }: LandingScenePro
 
     const resolutionUniform = context.getUniformLocation(program, 'u_resolution');
     const sizeUniform = context.getUniformLocation(program, 'u_imageSize');
-    const focusUniform = context.getUniformLocation(program, 'u_focus');
     const timeUniform = context.getUniformLocation(program, 'u_time');
     const motionUniform = context.getUniformLocation(program, 'u_motion');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -206,9 +208,8 @@ export default function LandingScene({ active, className = '' }: LandingScenePro
 
     const draw = () => {
       if (!loaded || disposed || contextLost) return;
-      const motionEnabled = canAnimate();
-      context.uniform1f(timeUniform, elapsed);
-      context.uniform1f(motionUniform, motionEnabled ? 1 : 0);
+      context.uniform1f(timeUniform, reducedMotion.matches ? SUNRISE_SECONDS : elapsed);
+      context.uniform1f(motionUniform, reducedMotion.matches ? 0 : 1);
       context.drawArrays(context.TRIANGLES, 0, 6);
     };
 
@@ -241,8 +242,6 @@ export default function LandingScene({ active, className = '' }: LandingScenePro
       }
       context.viewport(0, 0, width, height);
       context.uniform2f(resolutionUniform, width, height);
-      const [focusX, focusY] = getSceneFocus(window.innerWidth);
-      context.uniform2f(focusUniform, focusX, focusY);
       draw();
     };
 
@@ -309,7 +308,7 @@ export default function LandingScene({ active, className = '' }: LandingScenePro
         alt=""
         fetchPriority="high"
         draggable={false}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', position: 'absolute', inset: 0 }}
       />
       <canvas
         ref={canvasRef}
