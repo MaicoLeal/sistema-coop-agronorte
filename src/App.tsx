@@ -36,6 +36,10 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'producer_easy' | 'expert_management'>('producer_easy');
   const [showMateoChat, setShowMateoChat] = useState<boolean>(false);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
     setAppToast({ message, type });
     setTimeout(() => {
