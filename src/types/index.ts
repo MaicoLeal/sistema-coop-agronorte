@@ -253,3 +253,83 @@ export interface PublicTraceData {
   status: 'released' | 'hold' | 'recalled';
   institutionalContact: string;
 }
+
+// === GESTÃO DE INSUMOS & FERTIRRIGAÇÃO ===
+
+export type InputCategory = 'fertilizante' | 'defensivo' | 'substrato' | 'semente' | 'embalagem' | 'agua' | 'outro';
+export type InputUnit = 'kg' | 'L' | 'mL' | 'g' | 'unidade' | 'saco_25kg' | 'saco_50kg';
+
+export interface InputItem {
+  id: string;
+  tenantId: string;
+  name: string;
+  tradeName: string;
+  category: InputCategory;
+  unit: InputUnit;
+  currentStockQty: number;
+  minStockQty: number;
+  costPerUnit: number;
+  supplierId: string;
+  supplierName: string;
+  lastPurchaseDate: string;
+  expiryDate?: string;
+  senaveRegistration?: string;
+  isActive: boolean;
+}
+
+export interface InputMovement {
+  id: string;
+  tenantId: string;
+  inputItemId: string;
+  type: 'entrada' | 'saida' | 'ajuste' | 'perda';
+  quantity: number;
+  date: string;
+  zoneId?: string;
+  recipeId?: string;
+  operatorId: string;
+  notes?: string;
+  invoiceRef?: string;
+}
+
+export type GrowthPhase = 'mudas' | 'vegetativo' | 'floracao' | 'frutificacao' | 'maturacao';
+
+export interface NutrientRecipe {
+  id: string;
+  tenantId: string;
+  name: string;
+  cropType: 'tomate' | 'locote';
+  growthPhase: GrowthPhase;
+  targetPH: { min: number; max: number };
+  targetEC: { min: number; max: number };
+  components: RecipeComponent[];
+  waterVolumeLiters: number;
+  createdBy: string;
+  approvedBy?: string;
+  isActive: boolean;
+  version: number;
+  lastUsedDate?: string;
+  notes?: string;
+}
+
+export interface RecipeComponent {
+  inputItemId: string;
+  inputName: string;
+  quantityPerBatch: number;
+  unit: InputUnit;
+  orderOfAddition: number;
+}
+
+export interface FertigationLog {
+  id: string;
+  tenantId: string;
+  recipeId: string;
+  zoneId: string;
+  appliedAt: string;
+  phBefore: number;
+  ecBefore: number;
+  phAfter: number;
+  ecAfter: number;
+  volumeAppliedLiters: number;
+  operatorId: string;
+  observations?: string;
+}

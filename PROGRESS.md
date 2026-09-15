@@ -23,6 +23,20 @@
   - Matriz normativa versionada cobrindo SENAVE (Paraguay), BPA-PY, GLOBALG.A.P. e GS1.
   - Trilha de auditoria append-only encadeada com hashes criptográficos.
 
+## ✅ Concluído na Versão 1.2.0
+- [x] **Gestão de Insumos & Fertirrigação**:
+  - Catálogo de insumos agrícolas com níveis de estoque e alertas de reposição mínima.
+  - Receitas nutritivas hidropônicas por fase fenológica da cultura (Mudas, Vegetativo, Floração, Frutificação, Maturação).
+  - Diário de aplicações de fertirrigação com rastreabilidade de volume, condutividade e pH.
+- [x] **Relatórios & Exportação**:
+  - Exportação de dados operacionais e de colheita em CSV compatível com Excel.
+  - Emissão de relatórios executivos de produção, qualidade e uso de insumos para auditoria ou cooperados.
+- [x] **PWA (Progressive Web App) & Offline**:
+  - Service Worker ativo com precache de assets estáticos e suporte à operação sem internet.
+  - Manifesto Web com atalhos e metadados de instalação mobile e desktop.
+- [x] **Notificações em Tempo Real do Navegador**:
+  - Sistema de alertas push locais para desvios críticos de pH, EC e VPD.
+
 ---
 
 ## ⏳ Próximas Fases (Roadmap Pós-MVP)

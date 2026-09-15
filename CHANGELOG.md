@@ -2,6 +2,24 @@
 
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 
+## [1.2.0] - 2026-09-15
+### Adicionado
+- **Módulo de Insumos & Fertirrigação (`InputsManagement`)**:
+  - Gestão de estoque com movimentações de entrada/saída, saldo mínimo e rastreabilidade por lote/nota fiscal.
+  - Catálogo de receitas de fertirrigação hidropônica calibradas por cultura e fase (Mudas, Vegetativo, Floração, Frutificação, Maturação).
+  - Diário de aplicações com registro de condutividade elétrica (EC), pH e volume de calda por setor.
+- **Módulo de Relatórios & Exportação (`ReportsExport`)**:
+  - Relatórios analíticos de Produção (kg, produtividade/planta, refugo), Qualidade (distribuição por classe comercial e °Brix) e Insumos.
+  - Exportação instantânea em formato CSV para planilhas e relatórios formatados para impressão física/PDF.
+- **Progressive Web App (PWA) & Offline-First**:
+  - Manifesto Web (`manifest.json`) com ícones oficiais, cores temáticas e modo standalone.
+  - Service Worker (`sw.js`) com cache para ativos estáticos e estratégia network-first com fallback offline.
+- **Alertas Locais de Telemetria IoT (`NotificationService`)**:
+  - Monitoramento contínuo em segundo plano dos sensores de pH, EC, VPD e temperatura com notificações nativas do navegador.
+  - Botão de ativação/desativação rápida de alertas no painel de telemetria agronômica.
+- **Resiliência e Acessibilidade da Landing Page**:
+  - Otimização do fluxo de reprodução de vídeo, suporte a redução de movimento e botões táteis adaptados para operadores em campo.
+
 ## [1.1.0] - 2026-09-10
 ### Adicionado
 - **Versionamento Oficial na Interface**: Identificação visível e interativa da versão `v1.1.0` no cabeçalho superior, no rodapé e no novo modal de notas de versão e changelog (`VersionModal`).

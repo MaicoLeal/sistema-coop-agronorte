@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Language, UserRole, UserProfile } from './types';
+import { Language, UserRole, UserProfile, InputItem, InputMovement, NutrientRecipe, FertigationLog } from './types';
 import { StorageService } from './services/storageService';
 import { Header } from './components/Header';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
@@ -18,6 +18,8 @@ import { Sidebar } from './components/Sidebar';
 import { AnimatedLandingPage } from './components/AnimatedLandingPage';
 import { ProducerAvatar } from './components/ProducerAvatar';
 import { ProducerQuickView } from './components/ProducerQuickView';
+import { InputsManagement } from './components/InputsManagement';
+import { ReportsExport } from './components/ReportsExport';
 import { checkSupabaseConnection } from './services/supabaseClient';
 
 export default function App() {
@@ -68,6 +70,10 @@ export default function App() {
   const [inspections, setInspections] = useState(StorageService.getInspections());
   const [compliance, setCompliance] = useState(StorageService.getCompliance());
   const [auditLogs, setAuditLogs] = useState(StorageService.getAuditLog());
+  const [inputItems, setInputItems] = useState<InputItem[]>(StorageService.getInputItems());
+  const [inputMovements, setInputMovements] = useState<InputMovement[]>(StorageService.getInputMovements());
+  const [recipes, setRecipes] = useState<NutrientRecipe[]>(StorageService.getRecipes());
+  const [fertigationLogs, setFertigationLogs] = useState<FertigationLog[]>(StorageService.getFertigationLogs());
 
   const refreshData = () => {
     setZones(StorageService.getZones());
@@ -80,6 +86,10 @@ export default function App() {
     setInspections(StorageService.getInspections());
     setCompliance(StorageService.getCompliance());
     setAuditLogs(StorageService.getAuditLog());
+    setInputItems(StorageService.getInputItems());
+    setInputMovements(StorageService.getInputMovements());
+    setRecipes(StorageService.getRecipes());
+    setFertigationLogs(StorageService.getFertigationLogs());
     setPendingSyncCount(StorageService.getOutbox().length);
   };
 
@@ -284,6 +294,33 @@ export default function App() {
                   batches={batches}
                   currentUser={currentUser}
                   onRefreshData={refreshData}
+                />
+              )}
+
+              {activeTab === 'inputs' && (
+                <InputsManagement
+                  lang={lang}
+                  inputItems={inputItems}
+                  inputMovements={inputMovements}
+                  recipes={recipes}
+                  fertigationLogs={fertigationLogs}
+                  zones={zones}
+                  currentUser={currentUser}
+                  onRefreshData={refreshData}
+                />
+              )}
+
+              {activeTab === 'reports' && (
+                <ReportsExport
+                  lang={lang}
+                  harvests={harvests}
+                  packLots={packLots}
+                  batches={batches}
+                  zones={zones}
+                  shipments={shipments}
+                  inputItems={inputItems}
+                  inputMovements={inputMovements}
+                  currentUser={currentUser}
                 />
               )}
 

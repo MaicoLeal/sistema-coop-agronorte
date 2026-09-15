@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Language, DatastreamReading, ProductionZone } from '../types';
 import { translations } from '../i18n/translations';
 import { TelemetryService } from '../services/telemetryService';
+import { NotificationService } from '../services/notificationService';
 import {
   Thermometer,
   Droplets,
@@ -13,7 +14,9 @@ import {
   Zap,
   RotateCcw,
   Sparkles,
-  Info
+  Info,
+  Bell,
+  BellOff
 } from 'lucide-react';
 
 interface AgronomicDashboardProps {
@@ -28,6 +31,7 @@ export const AgronomicDashboard: React.FC<AgronomicDashboardProps> = ({ lang, zo
   const [history, setHistory] = useState<DatastreamReading[]>([]);
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [anomalyStatus, setAnomalyStatus] = useState<string>('none');
+  const [notificationsActive, setNotificationsActive] = useState<boolean>(NotificationService.isEnabled());
 
   // Initialize and run telemetry tick
   useEffect(() => {
@@ -41,12 +45,32 @@ export const AgronomicDashboard: React.FC<AgronomicDashboardProps> = ({ lang, zo
       setReading((prev) => {
         const next = TelemetryService.generateReading(selectedZoneId, prev || undefined);
         setHistory((h) => [...h.slice(-14), next]);
+        if (NotificationService.isEnabled()) {
+          const currentZone = zones.find((z) => z.id === selectedZoneId);
+          NotificationService.evaluateReading(next, currentZone);
+        }
         return next;
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [selectedZoneId, isSimulating]);
+  }, [selectedZoneId, isSimulating, zones]);
+
+  const handleToggleNotifications = async () => {
+    if (!notificationsActive) {
+      const granted = await NotificationService.requestPermission();
+      setNotificationsActive(granted);
+      if (granted) {
+        NotificationService.sendCustom(
+          '🌱 Coop Agronorte',
+          lang === 'es-PY' ? 'Alertas de telemetría activadas' : 'Alertas de telemetria ativadas',
+          'permission-granted'
+        );
+      }
+    } else {
+      setNotificationsActive(false);
+    }
+  };
 
   const handleAnomalyChange = (mode: 'none' | 'ph_spike' | 'frozen' | 'vpd_critical') => {
     TelemetryService.setAnomalyMode(mode);
@@ -118,6 +142,25 @@ export const AgronomicDashboard: React.FC<AgronomicDashboardProps> = ({ lang, zo
             title={isSimulating ? 'Pausar Telemetria' : 'Retomar Telemetria'}
           >
             {isSimulating ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </button>
+
+          <button
+            onClick={handleToggleNotifications}
+            className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              notificationsActive
+                ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
+                : 'bg-surface-container-high border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-highest'
+            }`}
+            title={
+              notificationsActive
+                ? (lang === 'es-PY' ? 'Notificaciones activas' : 'Notificações ativas')
+                : (lang === 'es-PY' ? 'Activar alertas en el navegador' : 'Ativar alertas no navegador')
+            }
+          >
+            {notificationsActive ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
+            <span className="hidden sm:inline text-[11px]">
+              {notificationsActive ? 'Alertas ON' : 'Alertas OFF'}
+            </span>
           </button>
         </div>
       </div>

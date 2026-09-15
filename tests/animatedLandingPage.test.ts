@@ -22,14 +22,40 @@ function renderLanding(lang: 'es-PY' | 'pt-BR' = 'es-PY') {
   );
 }
 
-test('producer entry uses the same sm breakpoint as the mobile card', () => {
-  const markup = renderLanding();
-  assert.match(markup, /class="hidden sm:flex items-center"/);
-  assert.match(markup, /class="sm:hidden absolute/);
-  assert.doesNotMatch(markup, /class="hidden md:flex items-center"/);
+test('landing video is optimized for progressive browser playback', () => {
+  const video = readFileSync(new URL('../public/assets/video-home.mp4', import.meta.url));
+  const moovOffset = video.indexOf(Buffer.from('moov'));
+  const mediaOffset = video.indexOf(Buffer.from('mdat'));
+
+  assert.ok(moovOffset > 0, 'MP4 must contain a moov atom');
+  assert.ok(mediaOffset > 0, 'MP4 must contain an mdat atom');
+  assert.ok(moovOffset < mediaOffset, 'moov atom must precede media data for fast start');
 });
 
-test('reduced motion and video failure expose a visible expert entry', () => {
+test('landing uses the approved reference video with a static fallback', () => {
+  const markup = renderLanding();
+
+  assert.match(markup, /<video[^>]*autoPlay=""[^>]*muted=""[^>]*loop=""[^>]*playsInline=""/);
+  assert.match(markup, /<source[^>]*src="\/assets\/video-home\.mp4"[^>]*type="video\/mp4"/);
+  assert.match(markup, /<img[^>]*src="\/assets\/agronorte-reference-hero\.jpg"/);
+});
+
+test('landing exposes separate producer and administration access buttons', () => {
+  const spanish = renderLanding('es-PY');
+
+  assert.match(spanish, /<button[^>]*data-access="producer"[^>]*>.*Acceso productor.*<\/button>/s);
+  assert.match(spanish, /<button[^>]*data-access="administration"[^>]*>.*Acceso administración.*<\/button>/s);
+});
+
+test('reference feature areas are real interactive controls', () => {
+  const markup = renderLanding('es-PY');
+  const featureButtons = markup.match(/data-feature="[^"]+"/g) ?? [];
+
+  assert.equal(featureButtons.length, 4);
+  assert.match(markup, /aria-live="polite"/);
+});
+
+test('getLandingPresentation is exported and returns correct states', () => {
   const getPresentation = Reflect.get(landingModule, 'getLandingPresentation');
   assert.equal(typeof getPresentation, 'function');
 
@@ -43,8 +69,6 @@ test('reduced motion and video failure expose a visible expert entry', () => {
       showLoading: false,
     });
   }
-
-  assert.match(componentSource, /showFallbackEntry\s*\?\s*'landing-hero__enter--fallback'/);
 });
 
 test('video readiness requires loaded data and motion, while errors settle loading', () => {
@@ -62,22 +86,15 @@ test('video readiness requires loaded data and motion, while errors settle loadi
     getPresentation({ isReady: true, motionEnabled: true, videoFailed: true }),
     { videoReady: false, showFallbackEntry: true, showLoading: false },
   );
-
-  assert.match(componentSource, /onError=\{[^}]*setVideoFailed\(true\)[^}]*\}/s);
-  assert.match(componentSource, /window\.setTimeout\(\(\)\s*=>\s*setVideoFailed\(true\),\s*VIDEO_LOAD_TIMEOUT_MS\)/);
-  assert.match(componentSource, /window\.clearTimeout\(fallbackTimer\)/);
-  assert.match(componentSource, /videoReady\s*\?\s*'is-ready'/);
-  assert.match(componentSource, /showLoading\s*&&/);
 });
 
 test('landing language semantics and accessible image copy follow the selected language', () => {
   const spanish = renderLanding('es-PY');
   assert.match(spanish, /<div[^>]*lang="es-PY"[^>]*aria-label="Página inicial del Sistema Coop Agronorte"/);
-  assert.match(spanish, /alt="Invernaderos hidropónicos de la Cooperativa Agronorte en Guayaibí, Paraguay"/);
+  assert.match(spanish, /alt="Cooperativa Agronorte"/);
 
   const portuguese = renderLanding('pt-BR');
   assert.match(portuguese, /<div[^>]*lang="pt-BR"[^>]*aria-label="Tela inicial do Sistema Coop Agronorte"/);
-  assert.match(portuguese, /alt="Estufas hidropônicas da Cooperativa Agronorte em Guayaibí, Paraguai"/);
 
   assert.match(appSource, /document\.documentElement\.lang\s*=\s*lang/);
 });

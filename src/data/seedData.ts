@@ -9,7 +9,11 @@ import {
   Alert,
   FieldInspection,
   ComplianceItem,
-  AuditEntry
+  AuditEntry,
+  InputItem,
+  InputMovement,
+  NutrientRecipe,
+  FertigationLog
 } from '../types';
 
 export const SEED_TENANT = {
@@ -562,3 +566,291 @@ export const INITIAL_AUDIT_LOG: AuditEntry[] = [
     currentHash: '39d2c679a941f6e2101e4a2c5a0dbd5d9c22c061803ea4274c5d4efd226a0901'
   }
 ];
+
+// === GESTÃO DE INSUMOS & FERTIRRIGAÇÃO ===
+
+export const INITIAL_INPUT_ITEMS: InputItem[] = [
+  {
+    id: 'inp-nitrato-calcio',
+    tenantId: SEED_TENANT.id,
+    name: 'Nitrato de Cálcio',
+    tradeName: 'Yara Calcinit',
+    category: 'fertilizante',
+    unit: 'saco_25kg',
+    currentStockQty: 18,
+    minStockQty: 5,
+    costPerUnit: 185000,
+    supplierId: 'sup-yara-py',
+    supplierName: 'Yara Paraguay S.A.',
+    lastPurchaseDate: '2026-08-20T10:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-map',
+    tenantId: SEED_TENANT.id,
+    name: 'Fosfato Monoamônico (MAP)',
+    tradeName: 'MAP Solúvel Tekno',
+    category: 'fertilizante',
+    unit: 'saco_25kg',
+    currentStockQty: 12,
+    minStockQty: 4,
+    costPerUnit: 210000,
+    supplierId: 'sup-tekno-agro',
+    supplierName: 'Tekno Agro Import',
+    lastPurchaseDate: '2026-08-15T14:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-sulfato-potassio',
+    tenantId: SEED_TENANT.id,
+    name: 'Sulfato de Potássio (SOP)',
+    tradeName: 'Yara Krista SOP',
+    category: 'fertilizante',
+    unit: 'saco_25kg',
+    currentStockQty: 8,
+    minStockQty: 4,
+    costPerUnit: 245000,
+    supplierId: 'sup-yara-py',
+    supplierName: 'Yara Paraguay S.A.',
+    lastPurchaseDate: '2026-08-20T10:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-acido-fosforico',
+    tenantId: SEED_TENANT.id,
+    name: 'Ácido Fosfórico 85%',
+    tradeName: 'Ácido Fosfórico P.A.',
+    category: 'fertilizante',
+    unit: 'L',
+    currentStockQty: 45,
+    minStockQty: 10,
+    costPerUnit: 32000,
+    supplierId: 'sup-quimica-py',
+    supplierName: 'Química Industrial PY',
+    lastPurchaseDate: '2026-07-28T09:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-micromix',
+    tenantId: SEED_TENANT.id,
+    name: 'Micronutrientes Quelados (MicroMix)',
+    tradeName: 'Rexene MicroMix Premium',
+    category: 'fertilizante',
+    unit: 'kg',
+    currentStockQty: 15,
+    minStockQty: 3,
+    costPerUnit: 98000,
+    supplierId: 'sup-rexene',
+    supplierName: 'Rexene do Paraguai',
+    lastPurchaseDate: '2026-08-10T11:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-fibra-coco',
+    tenantId: SEED_TENANT.id,
+    name: 'Substrato Fibra de Coco',
+    tradeName: 'CocoGreen Block 5kg',
+    category: 'substrato',
+    unit: 'unidade',
+    currentStockQty: 120,
+    minStockQty: 30,
+    costPerUnit: 28000,
+    supplierId: 'sup-cocogreen',
+    supplierName: 'CocoGreen Paraguay',
+    lastPurchaseDate: '2026-07-15T08:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-mudas-tomate',
+    tenantId: SEED_TENANT.id,
+    name: 'Mudas Tomate San Marzano',
+    tradeName: 'Mudas Certificadas Yguazú',
+    category: 'semente',
+    unit: 'unidade',
+    currentStockQty: 500,
+    minStockQty: 200,
+    costPerUnit: 1200,
+    supplierId: 'sup-vivero-yguazu',
+    supplierName: 'Vivero Yguazú Certificado',
+    lastPurchaseDate: '2026-07-10T07:00:00Z',
+    isActive: true
+  },
+  {
+    id: 'inp-caixa-10kg',
+    tenantId: SEED_TENANT.id,
+    name: 'Caixa Papelão 10kg Impressa',
+    tradeName: 'Caixa Agronorte 10kg',
+    category: 'embalagem',
+    unit: 'unidade',
+    currentStockQty: 800,
+    minStockQty: 200,
+    costPerUnit: 4500,
+    supplierId: 'sup-embalagens-py',
+    supplierName: 'Embalagens del Este',
+    lastPurchaseDate: '2026-08-25T13:00:00Z',
+    isActive: true
+  }
+];
+
+export const INITIAL_RECIPES: NutrientRecipe[] = [
+  {
+    id: 'recipe-tom-veg',
+    tenantId: SEED_TENANT.id,
+    name: 'Receita Tomate — Fase Vegetativa',
+    cropType: 'tomate',
+    growthPhase: 'vegetativo',
+    targetPH: { min: 5.8, max: 6.2 },
+    targetEC: { min: 1.8, max: 2.4 },
+    components: [
+      { inputItemId: 'inp-nitrato-calcio', inputName: 'Nitrato de Cálcio', quantityPerBatch: 800, unit: 'g', orderOfAddition: 1 },
+      { inputItemId: 'inp-map', inputName: 'MAP', quantityPerBatch: 200, unit: 'g', orderOfAddition: 2 },
+      { inputItemId: 'inp-sulfato-potassio', inputName: 'Sulfato de Potássio', quantityPerBatch: 350, unit: 'g', orderOfAddition: 3 },
+      { inputItemId: 'inp-micromix', inputName: 'MicroMix', quantityPerBatch: 25, unit: 'g', orderOfAddition: 4 },
+      { inputItemId: 'inp-acido-fosforico', inputName: 'Ácido Fosfórico', quantityPerBatch: 15, unit: 'mL', orderOfAddition: 5 }
+    ],
+    waterVolumeLiters: 1000,
+    createdBy: 'Ing. Arnaldo Silva',
+    approvedBy: 'Ing. Carlos Ortiz',
+    isActive: true,
+    version: 2,
+    lastUsedDate: '2026-09-14T07:00:00Z',
+    notes: 'Receita padrão para fase vegetativa. Dissolva o Nitrato de Cálcio separadamente no Tanque A. Os demais no Tanque B.'
+  },
+  {
+    id: 'recipe-tom-frut',
+    tenantId: SEED_TENANT.id,
+    name: 'Receita Tomate — Frutificação',
+    cropType: 'tomate',
+    growthPhase: 'frutificacao',
+    targetPH: { min: 5.5, max: 6.0 },
+    targetEC: { min: 2.2, max: 2.8 },
+    components: [
+      { inputItemId: 'inp-nitrato-calcio', inputName: 'Nitrato de Cálcio', quantityPerBatch: 650, unit: 'g', orderOfAddition: 1 },
+      { inputItemId: 'inp-map', inputName: 'MAP', quantityPerBatch: 250, unit: 'g', orderOfAddition: 2 },
+      { inputItemId: 'inp-sulfato-potassio', inputName: 'Sulfato de Potássio', quantityPerBatch: 500, unit: 'g', orderOfAddition: 3 },
+      { inputItemId: 'inp-micromix', inputName: 'MicroMix', quantityPerBatch: 30, unit: 'g', orderOfAddition: 4 },
+      { inputItemId: 'inp-acido-fosforico', inputName: 'Ácido Fosfórico', quantityPerBatch: 20, unit: 'mL', orderOfAddition: 5 }
+    ],
+    waterVolumeLiters: 1000,
+    createdBy: 'Ing. Arnaldo Silva',
+    approvedBy: 'Ing. Carlos Ortiz',
+    isActive: true,
+    version: 1,
+    lastUsedDate: '2026-09-12T07:30:00Z',
+    notes: 'Aumentar K para firmeza do fruto. Monitorar EC diariamente — ajustar se >2.8 mS/cm.'
+  },
+  {
+    id: 'recipe-loc-geral',
+    tenantId: SEED_TENANT.id,
+    name: 'Receita Locote — Geral (Substrato)',
+    cropType: 'locote',
+    growthPhase: 'floracao',
+    targetPH: { min: 5.8, max: 6.5 },
+    targetEC: { min: 2.0, max: 2.6 },
+    components: [
+      { inputItemId: 'inp-nitrato-calcio', inputName: 'Nitrato de Cálcio', quantityPerBatch: 700, unit: 'g', orderOfAddition: 1 },
+      { inputItemId: 'inp-map', inputName: 'MAP', quantityPerBatch: 180, unit: 'g', orderOfAddition: 2 },
+      { inputItemId: 'inp-sulfato-potassio', inputName: 'Sulfato de Potássio', quantityPerBatch: 420, unit: 'g', orderOfAddition: 3 },
+      { inputItemId: 'inp-micromix', inputName: 'MicroMix', quantityPerBatch: 20, unit: 'g', orderOfAddition: 4 },
+      { inputItemId: 'inp-acido-fosforico', inputName: 'Ácido Fosfórico', quantityPerBatch: 12, unit: 'mL', orderOfAddition: 5 }
+    ],
+    waterVolumeLiters: 1000,
+    createdBy: 'Ing. Arnaldo Silva',
+    approvedBy: 'Ing. Carlos Ortiz',
+    isActive: true,
+    version: 1,
+    lastUsedDate: '2026-09-13T08:00:00Z',
+    notes: 'Receita adaptada para substrato de fibra de coco. Fertirregar 4-6x/dia conforme demanda evaporativa.'
+  }
+];
+
+export const INITIAL_INPUT_MOVEMENTS: InputMovement[] = [
+  {
+    id: 'mov-001',
+    tenantId: SEED_TENANT.id,
+    inputItemId: 'inp-nitrato-calcio',
+    type: 'entrada',
+    quantity: 20,
+    date: '2026-08-20T10:00:00Z',
+    operatorId: 'Marcos Benítez',
+    notes: 'Compra mensal regular',
+    invoiceRef: 'NF-YARA-2026-4412'
+  },
+  {
+    id: 'mov-002',
+    tenantId: SEED_TENANT.id,
+    inputItemId: 'inp-nitrato-calcio',
+    type: 'saida',
+    quantity: 2,
+    date: '2026-09-10T06:30:00Z',
+    zoneId: 'zone-estufa-01',
+    recipeId: 'recipe-tom-veg',
+    operatorId: 'Juan Bareiro',
+    notes: 'Preparo de solução nutritiva matinal'
+  },
+  {
+    id: 'mov-003',
+    tenantId: SEED_TENANT.id,
+    inputItemId: 'inp-fibra-coco',
+    type: 'entrada',
+    quantity: 150,
+    date: '2026-07-15T08:00:00Z',
+    operatorId: 'Marcos Benítez',
+    notes: 'Reposição para Estufas 02, 04, 06, 08, 11',
+    invoiceRef: 'NF-COCO-2026-891'
+  },
+  {
+    id: 'mov-004',
+    tenantId: SEED_TENANT.id,
+    inputItemId: 'inp-fibra-coco',
+    type: 'saida',
+    quantity: 30,
+    date: '2026-07-16T09:00:00Z',
+    zoneId: 'zone-estufa-02',
+    operatorId: 'Marcos Benítez',
+    notes: 'Substituição de substrato das bancadas B3-B6'
+  },
+  {
+    id: 'mov-005',
+    tenantId: SEED_TENANT.id,
+    inputItemId: 'inp-sulfato-potassio',
+    type: 'entrada',
+    quantity: 10,
+    date: '2026-08-20T10:00:00Z',
+    operatorId: 'Marcos Benítez',
+    notes: 'Compra conjunta com Nitrato de Cálcio',
+    invoiceRef: 'NF-YARA-2026-4412'
+  }
+];
+
+export const INITIAL_FERTIGATION_LOGS: FertigationLog[] = [
+  {
+    id: 'fert-001',
+    tenantId: SEED_TENANT.id,
+    recipeId: 'recipe-tom-veg',
+    zoneId: 'zone-estufa-01',
+    appliedAt: '2026-09-14T07:00:00Z',
+    phBefore: 6.35,
+    ecBefore: 1.85,
+    phAfter: 5.92,
+    ecAfter: 2.15,
+    volumeAppliedLiters: 1200,
+    operatorId: 'Juan Bareiro',
+    observations: 'pH corrigido com ácido fosfórico. EC dentro da faixa-alvo após ajuste.'
+  },
+  {
+    id: 'fert-002',
+    tenantId: SEED_TENANT.id,
+    recipeId: 'recipe-loc-geral',
+    zoneId: 'zone-estufa-02',
+    appliedAt: '2026-09-13T08:00:00Z',
+    phBefore: 6.50,
+    ecBefore: 2.05,
+    phAfter: 6.08,
+    ecAfter: 2.30,
+    volumeAppliedLiters: 800,
+    operatorId: 'Marcos Benítez',
+    observations: 'Aplicação matinal normal. Substrato com boa drenagem.'
+  }
+];
+

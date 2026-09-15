@@ -162,6 +162,11 @@ export const translations = {
     audioListenResponse: 'Escuchar recomendación con voz',
     closeAssistant: 'Cerrar asistente',
     tapToSpeak: 'Tocar para hablar',
+
+    // Inputs Management & Fertigation
+    navInputs: 'Insumos & Fertirrigación',
+    navReports: 'Informes & Exportación',
+    navPropertyMap: 'Mapa de la Propiedad',
   },
   'pt-BR': {
     appName: 'Coop Agronorte',
@@ -324,5 +329,10 @@ export const translations = {
     audioListenResponse: 'Ouvir recomendação com voz',
     closeAssistant: 'Fechar assistente',
     tapToSpeak: 'Tocar para falar',
+
+    // Inputs Management & Fertigation
+    navInputs: 'Insumos & Fertirrigação',
+    navReports: 'Relatórios & Exportação',
+    navPropertyMap: 'Mapa da Propriedade',
   }
 };

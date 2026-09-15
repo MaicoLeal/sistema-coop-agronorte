@@ -22,7 +22,9 @@ import {
   ChevronDown,
   RotateCcw,
   Tag,
-  Bug
+  Bug,
+  Beaker,
+  FileBarChart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -80,9 +82,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'executive', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'batches', label: 'Setores & Bancadas', icon: Grid3X3 },
     { id: 'agronomic', label: 'Soluções & pH/EC', icon: FlaskConical },
+    { id: 'inputs', label: lang === 'es-PY' ? 'Insumos & Fertirrigación' : 'Insumos & Fertirrigação', icon: Beaker },
     { id: 'inspections', label: 'Diário de Campo', icon: ClipboardList },
     { id: 'harvest', label: 'Colheitas & Packing', icon: Package },
     { id: 'shipments', label: 'Expedição & Logística', icon: Truck },
+    { id: 'reports', label: lang === 'es-PY' ? 'Informes & Exportación' : 'Relatórios & Exportação', icon: FileBarChart },
     { id: 'recall', label: 'Alertas & Calibração', icon: AlertTriangle },
     { id: 'compliance', label: 'Relatórios Cooperados', icon: FileCheck },
     { id: 'audit', label: 'Auditoria & Imutabilidade', icon: History },

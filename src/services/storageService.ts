@@ -8,7 +8,11 @@ import {
   FieldInspection,
   AuditEntry,
   ComplianceItem,
-  ProductionZone
+  ProductionZone,
+  InputItem,
+  InputMovement,
+  NutrientRecipe,
+  FertigationLog
 } from '../types';
 import {
   INITIAL_BATCHES,
@@ -21,6 +25,10 @@ import {
   INITIAL_AUDIT_LOG,
   INITIAL_COMPLIANCE,
   INITIAL_ZONES,
+  INITIAL_INPUT_ITEMS,
+  INITIAL_INPUT_MOVEMENTS,
+  INITIAL_RECIPES,
+  INITIAL_FERTIGATION_LOGS,
   SEED_TENANT
 } from '../data/seedData';
 
@@ -35,7 +43,11 @@ const STORAGE_KEYS = {
   AUDIT: 'agronorte_audit_v2',
   COMPLIANCE: 'agronorte_compliance_v2',
   ZONES: 'agronorte_zones_v2',
-  OUTBOX: 'agronorte_outbox_v2'
+  OUTBOX: 'agronorte_outbox_v2',
+  INPUT_ITEMS: 'agronorte_input_items_v2',
+  INPUT_MOVEMENTS: 'agronorte_input_movements_v2',
+  RECIPES: 'agronorte_recipes_v2',
+  FERTIGATION_LOGS: 'agronorte_fertigation_logs_v2'
 };
 
 function getLocal<T>(key: string, fallback: T): T {
@@ -199,6 +211,64 @@ export class StorageService {
     return getLocal(STORAGE_KEYS.COMPLIANCE, INITIAL_COMPLIANCE);
   }
 
+  // === GESTÃO DE INSUMOS & FERTIRRIGAÇÃO ===
+
+  static getInputItems(): InputItem[] {
+    return getLocal(STORAGE_KEYS.INPUT_ITEMS, INITIAL_INPUT_ITEMS);
+  }
+
+  static saveInputItems(items: InputItem[]): void {
+    setLocal(STORAGE_KEYS.INPUT_ITEMS, items);
+  }
+
+  static getInputMovements(): InputMovement[] {
+    return getLocal(STORAGE_KEYS.INPUT_MOVEMENTS, INITIAL_INPUT_MOVEMENTS);
+  }
+
+  static saveInputMovements(movements: InputMovement[]): void {
+    setLocal(STORAGE_KEYS.INPUT_MOVEMENTS, movements);
+  }
+
+  static addInputMovement(movement: InputMovement): void {
+    const movements = this.getInputMovements();
+    movements.push(movement);
+    this.saveInputMovements(movements);
+
+    // Update stock quantity
+    const items = this.getInputItems();
+    const item = items.find(i => i.id === movement.inputItemId);
+    if (item) {
+      if (movement.type === 'entrada') {
+        item.currentStockQty += movement.quantity;
+      } else if (movement.type === 'saida' || movement.type === 'perda') {
+        item.currentStockQty = Math.max(0, item.currentStockQty - movement.quantity);
+      }
+      this.saveInputItems(items);
+    }
+  }
+
+  static getRecipes(): NutrientRecipe[] {
+    return getLocal(STORAGE_KEYS.RECIPES, INITIAL_RECIPES);
+  }
+
+  static saveRecipes(recipes: NutrientRecipe[]): void {
+    setLocal(STORAGE_KEYS.RECIPES, recipes);
+  }
+
+  static getFertigationLogs(): FertigationLog[] {
+    return getLocal(STORAGE_KEYS.FERTIGATION_LOGS, INITIAL_FERTIGATION_LOGS);
+  }
+
+  static saveFertigationLogs(logs: FertigationLog[]): void {
+    setLocal(STORAGE_KEYS.FERTIGATION_LOGS, logs);
+  }
+
+  static addFertigationLog(log: FertigationLog): void {
+    const logs = this.getFertigationLogs();
+    logs.push(log);
+    this.saveFertigationLogs(logs);
+  }
+
   // Outbox for Offline-First operations
   static getOutbox(): any[] {
     return getLocal(STORAGE_KEYS.OUTBOX, []);
@@ -271,5 +341,9 @@ export class StorageService {
     localStorage.removeItem(STORAGE_KEYS.COMPLIANCE);
     localStorage.removeItem(STORAGE_KEYS.ZONES);
     localStorage.removeItem(STORAGE_KEYS.OUTBOX);
+    localStorage.removeItem(STORAGE_KEYS.INPUT_ITEMS);
+    localStorage.removeItem(STORAGE_KEYS.INPUT_MOVEMENTS);
+    localStorage.removeItem(STORAGE_KEYS.RECIPES);
+    localStorage.removeItem(STORAGE_KEYS.FERTIGATION_LOGS);
   }
 }

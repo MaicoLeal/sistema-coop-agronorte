@@ -1,25 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
-  Droplets,
-  Globe,
+  Globe2,
   Leaf,
-  MapPin,
   Monitor,
   Pause,
   Play,
+  Route,
   Sprout,
-  Thermometer,
-  Users,
-  ChartNoAxesCombined,
-  Lightbulb,
 } from 'lucide-react';
+import { LANDING_CONTENT } from '../config/landingContent';
 import { Language } from '../types';
-import { LANDING_CONTENT, LANDING_CONTACTS } from '../config/landingContent';
-import LandingScene from './LandingScene';
-import './AnimatedLandingPage.css';
 
-/* ─── Backward-compatible presentation logic (exported for tests) ─── */
 type LandingPresentationState = {
   isReady: boolean;
   motionEnabled: boolean;
@@ -35,61 +27,31 @@ export function getLandingPresentation({ isReady, motionEnabled, videoFailed }: 
   };
 }
 
-/* ─── Feature icons mapped by id ─── */
-const FEATURE_ICONS: Record<string, React.FC<{ className?: string; strokeWidth?: number }>> = {
+const FEATURE_ICONS: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   cultivation: Sprout,
   telemetry: Monitor,
-  traceability: ArrowRight,
-  sustainability: Globe,
+  traceability: Route,
+  sustainability: Globe2,
 };
 
-/* ─── Stat icons mapped by id ─── */
-const STAT_ICONS: Record<string, React.FC<{ className?: string; strokeWidth?: number }>> = {
-  plants: Sprout,
-  people: Users,
-  progress: ChartNoAxesCombined,
-  innovation: Lightbulb,
-};
-
-/* ─── i18n labels for non-config copy ─── */
-const UI_LABELS = {
+const UI_COPY = {
   'es-PY': {
-    hydroponics: 'HIDROPONÍA INTELIGENTE',
-    tagline: 'TECNOLOGÍA QUE PRODUCE\nUN MEJOR MAÑANA',
-    temp: '26.4 °C',
-    humidity: '68 %',
-    ph: '6.1 pH',
-    ec: '2.1 mS/cm',
-    cultivos: 'CULTIVOS QUE\nCONECTAN PERSONAS',
-    coop: 'COOPERATIVA AGRONORTE',
-    dev: 'DESARROLLADO PARA PRODUCIR EN PARAGUAY',
-    scroll: 'SCROLL PARA CONOCER MÁS',
-    land: 'TIERRA DE\nOPORTUNIDADES',
-    fromField: 'DESDE EL CAMPO, PARA UN MAÑANA MEJOR',
-    communities: 'COMUNIDADES\nPRODUCIENDO FUTURO',
-    location: 'Guayaibí, San Pedro\nParaguay',
-    producerMode: 'Modo Fácil Productor · Don Mateo IA',
     ariaLabel: 'Página inicial del Sistema Coop Agronorte',
-    fallbackAlt: 'Invernaderos hidropónicos de la Cooperativa Agronorte en Guayaibí, Paraguay',
+    producer: 'Acceso productor',
+    administration: 'Acceso administración',
+    accessLabel: 'Seleccione cómo desea ingresar',
+    explore: 'Conozca nuestras soluciones',
+    loading: 'Preparando experiencia visual…',
+
   },
   'pt-BR': {
-    hydroponics: 'HIDROPONIA INTELIGENTE',
-    tagline: 'TECNOLOGIA QUE PRODUZ\nUM AMANHÃ MELHOR',
-    temp: '26.4 °C',
-    humidity: '68 %',
-    ph: '6.1 pH',
-    ec: '2.1 mS/cm',
-    cultivos: 'CULTIVOS QUE\nCONECTAM PESSOAS',
-    coop: 'COOPERATIVA AGRONORTE',
-    dev: 'DESENVOLVIDO PARA PRODUZIR NO PARAGUAI',
-    scroll: 'ROLE PARA CONHECER MAIS',
-    land: 'TERRA DE\nOPORTUNIDADES',
-    fromField: 'DO CAMPO, PARA UM AMANHÃ MELHOR',
-    communities: 'COMUNIDADES\nPRODUZINDO FUTURO',
-    location: 'Guayaibí, San Pedro\nParaguai',
-    producerMode: 'Modo Fácil Produtor · Don Mateo IA',
     ariaLabel: 'Tela inicial do Sistema Coop Agronorte',
-    fallbackAlt: 'Estufas hidropônicas da Cooperativa Agronorte em Guayaibí, Paraguai',
+    producer: 'Acesso do produtor',
+    administration: 'Acesso administrativo',
+    accessLabel: 'Selecione como deseja entrar',
+    explore: 'Conheça nossas soluções',
+    loading: 'Preparando experiência visual…',
+
   },
 } as const;
 
@@ -100,299 +62,166 @@ type Props = {
 };
 
 export function AnimatedLandingPage({ onEnter, lang = 'es-PY', onLanguageChange }: Props) {
-  const [sceneActive, setSceneActive] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [motionEnabled, setMotionEnabled] = useState(true);
+  const [activeFeature, setActiveFeature] = useState<number | null>(null);
   const content = LANDING_CONTENT[lang];
-  const labels = UI_LABELS[lang];
-  const contacts = LANDING_CONTACTS;
+  const copy = UI_COPY[lang];
+  const presentation = getLandingPresentation({ isReady, motionEnabled, videoFailed });
+  const selectedFeature = activeFeature === null ? null : content.features[activeFeature];
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const applyPreference = () => setMotionEnabled(!reducedMotion.matches);
+    applyPreference();
+    reducedMotion.addEventListener('change', applyPreference);
+    return () => reducedMotion.removeEventListener('change', applyPreference);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || videoFailed) return;
+
+    if (motionEnabled) {
+      void video.play().catch(() => setVideoFailed(true));
+    } else {
+      video.pause();
+    }
+  }, [motionEnabled, videoFailed]);
+
+  const toggleMotion = () => {
+    if (videoFailed) return;
+    setMotionEnabled((current) => !current);
+  };
 
   return (
-    <div className="agronorte-landing" lang={lang} aria-label={labels.ariaLabel}>
-      {/* ═══ HERO STAGE ═══ */}
-      <section className="landing-stage">
-        {/* WebGL cinemagraph background */}
-        <LandingScene active={sceneActive} />
+    <div className="reference-landing" lang={lang} aria-label={copy.ariaLabel}>
+      <div className="reference-landing__ambient" aria-hidden="true" />
 
-        {/* Gradient overlay for text readability */}
-        <div className="landing-stage__shade" />
-
-        {/* ─── Header: Logo + Location + Languages + Pause ─── */}
-        <header className="landing-header">
-          <div className="landing-brand">
-            <img
-              src="/assets/logo-oficial-agronorte-tight.png"
-              alt="Cooperativa Agronorte"
-              draggable={false}
-            />
-          </div>
-
-          <div className="landing-header__tools">
-            {/* Location badge */}
-            <span className="landing-place">
-              <MapPin size={14} strokeWidth={2} />
-              <span>{labels.location.split('\n').join(', ')}</span>
-            </span>
-
-            {/* Communities badge (desktop only) */}
-            <span className="landing-communities-badge">
-              {labels.communities.split('\n').map((line, i) => (
-                <span key={i}>{line}</span>
-              ))}
-            </span>
-
-            {/* Language selector */}
-            {onLanguageChange && (
-              <div className="landing-languages">
-                <button
-                  type="button"
-                  onClick={() => onLanguageChange('es-PY')}
-                  aria-pressed={lang === 'es-PY'}
-                  title="Español (Paraguay)"
-                >
-                  🇵🇾 ES
-                </button>
-                <span />
-                <button
-                  type="button"
-                  onClick={() => onLanguageChange('pt-BR')}
-                  aria-pressed={lang === 'pt-BR'}
-                  title="Português (Brasil)"
-                >
-                  🇧🇷 PT
-                </button>
-              </div>
-            )}
-
-            {/* Pause/Play animation */}
-            <button
-              type="button"
-              className="landing-motion"
-              onClick={() => setSceneActive((prev) => !prev)}
-              title={sceneActive ? content.pauseMotion : content.resumeMotion}
-              aria-label={sceneActive ? content.pauseMotion : content.resumeMotion}
-            >
-              {sceneActive ? <Pause size={18} /> : <Play size={18} />}
-            </button>
-          </div>
-        </header>
-
-        {/* ─── Hero Content: Titles + Tagline + Buttons ─── */}
-        <div className="landing-intro">
-          {/* Sub-brand */}
-          <p className="landing-hydroponics">{labels.hydroponics}</p>
-
-          {/* Paraguayan flag colors bar */}
-          <div className="landing-flag-bar">
-            <span className="landing-flag-bar__red" />
-            <span className="landing-flag-bar__white" />
-            <span className="landing-flag-bar__blue" />
-          </div>
-
-          {/* Tagline */}
-          <p className="landing-tagline">
-            {labels.tagline.split('\n').map((line, i) => (
-              <span key={i}>{line}</span>
-            ))}
-          </p>
-
-          {/* Main title */}
-          <h1>
-            {content.titleLine1}{' '}
-            <span>{content.titleLine2}</span>
-          </h1>
-
-          {/* Subtitle */}
-          <p className="landing-intro__slogan">{content.subtitle}</p>
-
-          {/* Features row */}
-          <div className="landing-features-row">
-            {content.features.map((feat) => {
-              const Icon = FEATURE_ICONS[feat.id] || Globe;
-              return (
-                <div key={feat.id} className="landing-feature-item">
-                  <Icon size={22} strokeWidth={1.5} />
-                  <div>
-                    <span>{feat.label}</span>
-                    <small>{feat.detail}</small>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Action buttons */}
-          <div className="landing-actions">
-            <button
-              type="button"
-              className="landing-entry"
-              onClick={() => onEnter('expert_management')}
-              aria-label={content.enter}
-            >
-              <span>{content.enter.toUpperCase()}</span>
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </button>
-
-            <button
-              type="button"
-              className="landing-producer"
-              onClick={() => onEnter('producer_easy')}
-              aria-label={labels.producerMode}
-            >
-              <span>🌾</span>
-              <span>{labels.producerMode}</span>
-            </button>
-          </div>
-
-          {/* Footer texts below buttons */}
-          <p className="landing-coop-label">{labels.coop}</p>
-          <p className="landing-dev-label">{labels.dev}</p>
-        </div>
-
-        {/* ─── Telemetry HUD (floating, right side, desktop) ─── */}
-        <aside className="landing-hud" aria-label="Telemetría IoT">
-          <div className="landing-hud__row">
-            <Thermometer size={16} strokeWidth={1.8} />
-            <span>{labels.temp}</span>
-          </div>
-          <div className="landing-hud__row">
-            <Droplets size={16} strokeWidth={1.8} />
-            <span>{labels.humidity}</span>
-          </div>
-          <div className="landing-hud__row">
-            <Leaf size={16} strokeWidth={1.8} />
-            <span>{labels.ph}</span>
-          </div>
-          <div className="landing-hud__row">
-            <ChartNoAxesCombined size={16} strokeWidth={1.8} />
-            <span>{labels.ec}</span>
-          </div>
-        </aside>
-
-        {/* ─── Center logo badge ─── */}
-        <div className="landing-center-badge">
-          <img
-            src="/assets/logo-oficial-agronorte-white-tight.png"
-            alt=""
-            draggable={false}
-          />
-          <p>
-            {labels.cultivos.split('\n').map((line, i) => (
-              <span key={i}>{line}</span>
-            ))}
-          </p>
-        </div>
-      </section>
-
-      {/* ═══ BOTTOM BAR: Map + Scroll + Stats ═══ */}
-      <section className="landing-bottom">
-        {/* Left: Map + country info */}
-        <div className="landing-bottom__map">
-          <span className="landing-bottom__country">{content.country}</span>
-          <p className="landing-bottom__land">
-            {labels.land.split('\n').map((line, i) => (
-              <span key={i}>{line}</span>
-            ))}
-          </p>
-        </div>
-
-        {/* Center: Scroll indicator */}
-        <div className="landing-bottom__scroll">
-          <span className="landing-bottom__scroll-icon">↓</span>
-          <span>{labels.scroll}</span>
-        </div>
-
-        {/* Right: Stats + flag + slogan */}
-        <div className="landing-bottom__stats-area">
-          <div className="landing-bottom__stats-row">
-            {content.stats.slice(0, 3).map((stat, i) => (
-              <React.Fragment key={stat.id}>
-                <span className="landing-bottom__stat-label">{stat.label}</span>
-                {i < 2 && <span className="landing-bottom__stat-divider">|</span>}
-              </React.Fragment>
-            ))}
-          </div>
-          <div className="landing-bottom__flag-mini">
-            <span /><span /><span />
-          </div>
-          <p className="landing-bottom__from-field">{labels.fromField}</p>
-        </div>
-      </section>
-
-      {/* ═══ IMPACT / STATS SECTION ═══ */}
-      <section className="landing-impact">
-        <div className="landing-impact__intro">
-          <span className="landing-overline">{content.country}</span>
-          <p>
-            {content.impactTitle} <em>{content.impactSubtitle}</em>
-          </p>
-        </div>
-
-        <div className="landing-stats">
-          {content.stats.map((stat, i) => {
-            const Icon = STAT_ICONS[stat.id] || Lightbulb;
-            return (
-              <article key={stat.id} className="landing-stat" tabIndex={0}>
-                <div className="landing-stat__heading">
-                  <span>{String(i + 1).padStart(2, '0')} / {stat.label}</span>
-                  <Icon size={22} strokeWidth={1.5} />
-                </div>
-                <strong>{stat.value}</strong>
-                <p>{stat.detail}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ═══ FOOTER ═══ */}
-      <footer className="landing-footer">
+      <section className="reference-artboard" aria-describedby="landing-feature-description">
         <img
-          src="/assets/logo-oficial-agronorte-white-tight.png"
+          className="reference-artboard__fallback"
+          src="/assets/agronorte-reference-hero.jpg"
           alt="Cooperativa Agronorte"
           draggable={false}
         />
-        <p>{content.footerNote}</p>
+        <video
+          ref={videoRef}
+          className={`reference-artboard__video${presentation.videoReady ? ' is-ready' : ''}`}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster="/assets/agronorte-reference-hero.jpg"
+          onLoadedData={() => setIsReady(true)}
+          onError={() => setVideoFailed(true)}
+          aria-hidden="true"
+        >
+          <source src="/assets/video-home.mp4" type="video/mp4" />
+        </video>
 
-        <nav className="landing-contacts" aria-label="Contacto">
-          {contacts.map((c) =>
-            c.href ? (
-              <a key={c.id} href={c.href} target="_blank" rel="noopener noreferrer">
-                {c.id === 'instagram' && <Globe size={12} />}
-                {c.id === 'website' && <Globe size={12} />}
-                {c.label}
-              </a>
-            ) : (
-              <span key={c.id}>
-                <MapPin size={12} />
-                {c.label}
-              </span>
-            ),
+        <div className="reference-artboard__vignette" aria-hidden="true" />
+
+        <div className="reference-toolbar">
+          {onLanguageChange && (
+            <div className="reference-languages" aria-label="Idioma">
+              <button
+                type="button"
+                title="Español (Paraguay)"
+                aria-pressed={lang === 'es-PY'}
+                onClick={() => onLanguageChange('es-PY')}
+              >
+                ES
+              </button>
+              <button
+                type="button"
+                title="Português (Brasil)"
+                aria-pressed={lang === 'pt-BR'}
+                onClick={() => onLanguageChange('pt-BR')}
+              >
+                PT
+              </button>
+            </div>
           )}
-        </nav>
-      </footer>
-
-      {/* ═══ MOBILE CARD (small screens) ═══ */}
-      <div className="landing-mobile-card">
-        <div className="landing-mobile-card__header">
-          <span className="landing-mobile-card__brand">COOP AGRONORTE</span>
-          <span className="landing-mobile-card__badge">12+ {lang === 'es-PY' ? 'Invernaderos' : 'Estufas'}</span>
+          <button
+            type="button"
+            className="reference-motion"
+            onClick={toggleMotion}
+            disabled={videoFailed}
+            title={motionEnabled ? content.pauseMotion : content.resumeMotion}
+            aria-label={motionEnabled ? content.pauseMotion : content.resumeMotion}
+          >
+            {motionEnabled ? <Pause size={17} /> : <Play size={17} />}
+          </button>
         </div>
-        <button
-          type="button"
-          className="landing-mobile-card__enter"
-          onClick={() => onEnter('expert_management')}
+
+        <nav className="reference-features" aria-label={copy.explore}>
+          {content.features.map((feature, index) => {
+            const Icon = FEATURE_ICONS[feature.id] ?? Leaf;
+            return (
+              <button
+                key={feature.id}
+                type="button"
+                data-feature={feature.id}
+                aria-pressed={activeFeature === index}
+                aria-label={`${feature.label}: ${feature.detail}`}
+                onMouseEnter={() => setActiveFeature(index)}
+                onFocus={() => setActiveFeature(index)}
+                onClick={() => setActiveFeature(index)}
+              >
+                <Icon size={15} strokeWidth={1.8} />
+                <span>{feature.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div
+          className={`reference-feature-detail${selectedFeature ? '' : ' is-empty'}`}
+          id="landing-feature-description"
+          aria-live="polite"
         >
-          <span>{content.enter.toUpperCase()}</span>
-          <ArrowRight size={16} />
-        </button>
-        <button
-          type="button"
-          className="landing-mobile-card__producer"
-          onClick={() => onEnter('producer_easy')}
-        >
-          <span>🌾</span>
-          <span>{labels.producerMode}</span>
-        </button>
-      </div>
+          {selectedFeature && (
+            <>
+              <strong>{selectedFeature.label}</strong>
+              <span>{selectedFeature.detail}</span>
+            </>
+          )}
+        </div>
+
+        <div className="reference-access" aria-label={copy.accessLabel}>
+          <button
+            type="button"
+            className="reference-access__button reference-access__button--producer"
+            data-access="producer"
+            onClick={() => onEnter('producer_easy')}
+          >
+            <Sprout size={17} strokeWidth={2} />
+            <span>{copy.producer}</span>
+            <ArrowRight size={16} strokeWidth={2.4} />
+          </button>
+          <button
+            type="button"
+            className="reference-access__button reference-access__button--admin"
+            data-access="administration"
+            onClick={() => onEnter('expert_management')}
+          >
+            <Monitor size={17} strokeWidth={2} />
+            <span>{copy.administration}</span>
+            <ArrowRight size={16} strokeWidth={2.4} />
+          </button>
+        </div>
+
+        {presentation.showLoading && (
+          <span className="reference-loading" role="status">{copy.loading}</span>
+        )}
+        {videoFailed && (
+          <span className="reference-status" role="status">Modo visual estático</span>
+        )}
+      </section>
     </div>
   );
 }
