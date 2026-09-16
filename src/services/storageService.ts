@@ -12,7 +12,8 @@ import {
   InputItem,
   InputMovement,
   NutrientRecipe,
-  FertigationLog
+  FertigationLog,
+  UserProfile
 } from '../types';
 import {
   INITIAL_BATCHES,
@@ -82,6 +83,10 @@ function computeHash(dataString: string): string {
 export class StorageService {
   static getZones(): ProductionZone[] {
     return getLocal(STORAGE_KEYS.ZONES, INITIAL_ZONES);
+  }
+
+  static saveZones(zones: ProductionZone[]): void {
+    setLocal(STORAGE_KEYS.ZONES, zones);
   }
 
   static getBatches(): PlantBatch[] {
@@ -174,6 +179,20 @@ export class StorageService {
 
   static saveInspections(inspections: FieldInspection[]): void {
     setLocal(STORAGE_KEYS.INSPECTIONS, inspections);
+  }
+
+  static addInspection(inspection: FieldInspection, user: UserProfile): void {
+    const list = this.getInspections();
+    list.unshift(inspection);
+    this.saveInspections(list);
+    this.appendAudit(
+      user.id,
+      user.role,
+      'create_field_inspection',
+      'inspection',
+      inspection.id,
+      `Apontamento manual: ${inspection.templateType} na zona ${inspection.zoneId} (pH: ${inspection.phManual ?? '-'}, EC: ${inspection.ecManual ?? '-'})`
+    );
   }
 
   static getAuditLog(): AuditEntry[] {

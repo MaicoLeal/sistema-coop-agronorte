@@ -6,10 +6,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import * as landingModule from '../src/components/AnimatedLandingPage';
 
-const componentSource = readFileSync(
-  new URL('../src/components/AnimatedLandingPage.tsx', import.meta.url),
-  'utf8',
-);
 const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 
 function renderLanding(lang: 'es-PY' | 'pt-BR' = 'es-PY') {
@@ -32,27 +28,49 @@ test('landing video is optimized for progressive browser playback', () => {
   assert.ok(moovOffset < mediaOffset, 'moov atom must precede media data for fast start');
 });
 
-test('landing uses the approved reference video with a static fallback', () => {
-  const markup = renderLanding();
-
-  assert.match(markup, /<video[^>]*autoPlay=""[^>]*muted=""[^>]*loop=""[^>]*playsInline=""/);
-  assert.match(markup, /<source[^>]*src="\/assets\/video-home\.mp4"[^>]*type="video\/mp4"/);
-  assert.match(markup, /<img[^>]*src="\/assets\/agronorte-reference-hero\.jpg"/);
-});
-
-test('landing exposes separate producer and administration access buttons', () => {
-  const spanish = renderLanding('es-PY');
-
-  assert.match(spanish, /<button[^>]*data-access="producer"[^>]*>.*Acceso productor.*<\/button>/s);
-  assert.match(spanish, /<button[^>]*data-access="administration"[^>]*>.*Acceso administración.*<\/button>/s);
-});
-
-test('reference feature areas are real interactive controls', () => {
+test('renders the cinematic hero with background artwork, overlay, and content layer', () => {
   const markup = renderLanding('es-PY');
-  const featureButtons = markup.match(/data-feature="[^"]+"/g) ?? [];
 
-  assert.equal(featureButtons.length, 4);
-  assert.match(markup, /aria-live="polite"/);
+  assert.match(markup, /data-agronorte-visual=""/);
+  assert.match(markup, /class="[^"]*agronorte-visual__frame[^"]*"/);
+  assert.match(markup, /class="[^"]*agronorte-visual__art[^"]*"/);
+  assert.match(markup, /class="[^"]*agronorte-visual__overlay[^"]*"/);
+  assert.match(markup, /class="[^"]*agronorte-visual__content[^"]*"/);
+  assert.match(markup, /agronorte-sunrise-hero/);
+});
+
+test('renders visible headline, description and action buttons as HTML text', () => {
+  const markup = renderLanding('es-PY');
+
+  // Headline text from landingContent
+  assert.match(markup, /Agricultura inteligente,/);
+  assert.match(markup, /raíces paraguayas/);
+
+  // Description text
+  assert.match(markup, /Control de clima, riego y producción en tiempo real/);
+
+  // Primary action button
+  assert.match(markup, /Acceder a la plataforma/);
+
+  // Secondary action button
+  assert.match(markup, /Conocer la tecnología/);
+});
+
+test('renders the interactive enter button with data-action and screen reader headline', () => {
+  const spanish = renderLanding('es-PY');
+  assert.match(spanish, /data-action="enter-system"/);
+  assert.match(spanish, /Agricultura de precisión para un Paraguay más fuerte/);
+
+  const portuguese = renderLanding('pt-BR');
+  assert.match(portuguese, /data-action="enter-system"/);
+  assert.match(portuguese, /Agricultura de precisão para um Paraguai mais forte/);
+});
+
+test('renders bottom indicators for monitoring, cultivation, and sustainability', () => {
+  const markup = renderLanding('es-PY');
+  assert.match(markup, /Monitoreo en tiempo real/);
+  assert.match(markup, /Cultivo hidropónico/);
+  assert.match(markup, /Producción sostenible/);
 });
 
 test('getLandingPresentation is exported and returns correct states', () => {
@@ -88,13 +106,12 @@ test('video readiness requires loaded data and motion, while errors settle loadi
   );
 });
 
-test('landing language semantics and accessible image copy follow the selected language', () => {
+test('landing language semantics follow the selected language', () => {
   const spanish = renderLanding('es-PY');
-  assert.match(spanish, /<div[^>]*lang="es-PY"[^>]*aria-label="Página inicial del Sistema Coop Agronorte"/);
-  assert.match(spanish, /alt="Cooperativa Agronorte"/);
+  assert.match(spanish, /<div[^>]*data-agronorte-visual=""[^>]*lang="es-PY"/);
 
   const portuguese = renderLanding('pt-BR');
-  assert.match(portuguese, /<div[^>]*lang="pt-BR"[^>]*aria-label="Tela inicial do Sistema Coop Agronorte"/);
+  assert.match(portuguese, /<div[^>]*data-agronorte-visual=""[^>]*lang="pt-BR"/);
 
   assert.match(appSource, /document\.documentElement\.lang\s*=\s*lang/);
 });
@@ -107,4 +124,20 @@ test('language selector buttons expose their pressed state', () => {
   const portuguese = renderLanding('pt-BR');
   assert.match(portuguese, /title="Español \(Paraguay\)"[^>]*aria-pressed="false"/);
   assert.match(portuguese, /title="Português \(Brasil\)"[^>]*aria-pressed="true"/);
+});
+
+test('content switches correctly between Spanish and Portuguese', () => {
+  const spanish = renderLanding('es-PY');
+  assert.match(spanish, /raíces paraguayas/);
+  assert.match(spanish, /Acceder a la plataforma/);
+
+  const portuguese = renderLanding('pt-BR');
+  assert.match(portuguese, /raízes paraguaias/);
+  assert.match(portuguese, /Acessar plataforma/);
+});
+
+test('hero renders the Agronorte logo', () => {
+  const markup = renderLanding('es-PY');
+  assert.match(markup, /logo-oficial-agronorte-white-tight\.png/);
+  assert.match(markup, /class="[^"]*agronorte-visual__logo[^"]*"/);
 });

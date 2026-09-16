@@ -11,5 +11,9 @@ docs/Preview_Tela_Principal_Animada_V2*
 video home/
 .DS_Store
 *.log
+debug.log
+live_*.png
+flag_*.png
+test_*.png
 .env*
 !.env.example

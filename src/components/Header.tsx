@@ -6,7 +6,8 @@ import {
   Bell,
   Bug,
   ChevronDown,
-  Menu
+  Menu,
+  ClipboardList
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -18,6 +19,7 @@ interface HeaderProps {
   onOpenMateoChat?: () => void;
   onOpenNotifications?: () => void;
   onOpenPestDiagnosis?: () => void;
+  onOpenFieldInspections?: () => void;
   onToggleMobileSidebar?: () => void;
   unreadAlertsCount?: number;
 }
@@ -31,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMateoChat,
   onOpenNotifications,
   onOpenPestDiagnosis,
+  onOpenFieldInspections,
   onToggleMobileSidebar,
   unreadAlertsCount = 2
 }) => {
@@ -92,6 +95,18 @@ export const Header: React.FC<HeaderProps> = ({
             <span>IA Diagnóstico (Foto/Áudio)</span>
           </button>
         )}
+
+        {/* Field Inspections Quick Action in Top Header */}
+        {onOpenFieldInspections && (
+          <button
+            onClick={onOpenFieldInspections}
+            className="hidden xl:flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-container text-on-surface px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer shadow-xs border border-outline-variant/40"
+            title="Abrir Diário e Apontamento de Campo"
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-primary" />
+            <span>Diário de Campo</span>
+          </button>
+        )}
       </div>
 
       {/* Right items: View Mode Switcher, Don Mateo Trigger, Notifications, Profile */}
@@ -115,11 +130,18 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenMateoChat && (
           <button
             onClick={onOpenMateoChat}
-            className="flex items-center gap-1.5 bg-primary-container text-on-primary-container px-3 py-1.5 rounded-full text-xs font-bold hover:bg-primary hover:text-on-primary transition-all cursor-pointer shadow-xs"
-            title="Conversar com Don Mateo (Voz e Dúvidas)"
+            className="flex items-center gap-2 bg-emerald-950/70 hover:bg-emerald-850 text-emerald-100 pl-1.5 pr-3 py-1 rounded-full text-xs font-bold border border-emerald-600/40 hover:border-emerald-400 transition-all cursor-pointer shadow-xs group"
+            title="Conversar com Don Mateo (Assistente 3D)"
           >
-            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-            <span>Don Mateo</span>
+            <div className="w-5 h-5 rounded-full overflow-hidden ring-1 ring-emerald-400/80 shrink-0 bg-emerald-950">
+              <img
+                src="/assets/don-mateo/don-mateo-idle.jpg"
+                alt="Don Mateo 3D"
+                className="w-full h-full object-cover scale-110"
+              />
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Don Mateo 3D</span>
           </button>
         )}
 

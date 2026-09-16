@@ -208,6 +208,10 @@ export default function App() {
             setActiveTab('recall');
           }}
           onOpenPestDiagnosis={() => setShowPestDiagnosisModal(true)}
+          onOpenFieldInspections={() => {
+            setViewMode('expert_management');
+            setActiveTab('inspections');
+          }}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           unreadAlertsCount={alerts.filter((a) => a.status === 'new').length}
         />
@@ -223,7 +227,12 @@ export default function App() {
               onSwitchToExpert={() => setViewMode('expert_management')}
               onOpenPestDiagnosis={() => setShowPestDiagnosisModal(true)}
               onOpenMateoChat={() => setShowMateoChat(true)}
+              onOpenFieldInspections={() => {
+                setViewMode('expert_management');
+                setActiveTab('inspections');
+              }}
               onHarvestSaved={refreshData}
+              onInspectionSaved={refreshData}
               onSelectZone={setSelectedZoneId}
             />
           ) : (

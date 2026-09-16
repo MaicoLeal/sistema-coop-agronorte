@@ -187,14 +187,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-6 py-1.5">
             <button
               onClick={onOpenMateoChat}
-              className="w-full bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-between shadow-xs transition-all cursor-pointer group"
+              className="w-full bg-emerald-950/70 hover:bg-emerald-900 text-emerald-100 px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-between shadow-xs border border-emerald-700/40 hover:border-emerald-500 transition-all cursor-pointer group"
             >
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse" />
-                <span>Don Mateo (Voz & Dúvidas)</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-emerald-400 shrink-0 bg-emerald-950">
+                  <img
+                    src="/assets/don-mateo/don-mateo-idle.jpg"
+                    alt="Don Mateo 3D"
+                    className="w-full h-full object-cover scale-110"
+                  />
+                </div>
+                <span>Don Mateo (IA 3D)</span>
               </div>
-              <span className="text-[10px] font-mono bg-white/20 px-1.5 py-0.5 rounded font-bold">
-                Áudio
+              <span className="text-[10px] font-mono bg-emerald-800/80 text-emerald-200 px-1.5 py-0.5 rounded border border-emerald-600/40 font-bold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                3D
               </span>
             </button>
           </div>
