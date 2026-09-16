@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { Language, UserProfile, ProductionZone, PlantBatch, HarvestRecord, FieldInspection } from '../types';
+import React, { useState, useMemo } from 'react';
+import {
+  Language,
+  UserProfile,
+  ProductionZone,
+  PlantBatch,
+  HarvestRecord,
+  FieldInspection,
+  UnifiedIntervention
+} from '../types';
 import { translations } from '../i18n/translations';
 import { StorageService } from '../services/storageService';
 import { VoiceAssistantService } from '../services/voiceAssistantService';
+import { BatchCertificateModal } from './BatchCertificateModal';
 import {
   Sprout,
   Camera,
@@ -24,7 +33,16 @@ import {
   X,
   Thermometer,
   Activity,
-  Check
+  Check,
+  Award,
+  Calendar,
+  Clock,
+  User,
+  ShieldCheck,
+  Filter,
+  FileText,
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 
 interface ProducerQuickViewProps {
@@ -36,6 +54,7 @@ interface ProducerQuickViewProps {
   onOpenPestDiagnosis: () => void;
   onOpenMateoChat: () => void;
   onOpenFieldInspections?: () => void;
+  onOpenPublicTrace?: (token: string) => void;
   onHarvestSaved?: () => void;
   onInspectionSaved?: () => void;
   onSelectZone: (zoneId: string) => void;
@@ -50,6 +69,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
   onOpenPestDiagnosis,
   onOpenMateoChat,
   onOpenFieldInspections,
+  onOpenPublicTrace,
   onHarvestSaved,
   onInspectionSaved,
   onSelectZone
@@ -57,49 +77,124 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
   const t = translations[lang];
   const isPt = lang === 'pt-BR';
 
+  // 🎯 CROP SELECTOR (Foco Unificado: Tomate vs Locote Verde)
+  const [selectedCrop, setSelectedCrop] = useState<'tomate' | 'locote'>('tomate');
+
+  // Filter greenhouses by the selected crop
+  const cropZones = useMemo(() => {
+    return zones.filter((z) => z.cropType === selectedCrop);
+  }, [zones, selectedCrop]);
+
+  // Active Selected Greenhouse
+  const [activeZoneId, setActiveZoneId] = useState<string>(cropZones[0]?.id || zones[0]?.id || 'zone-estufa-01');
+
+  // Ensure activeZoneId matches the current crop
+  const currentZone = useMemo(() => {
+    return cropZones.find((z) => z.id === activeZoneId) || cropZones[0] || zones[0];
+  }, [cropZones, activeZoneId]);
+
+  // Current active batch for this zone
+  const currentBatch = useMemo(() => {
+    return batches.find((b) => b.zoneId === currentZone.id) ||
+      batches.find((b) => selectedCrop === 'tomate' ? b.crop.includes('Tomate') : b.crop.includes('Locote')) ||
+      batches[0];
+  }, [batches, currentZone, selectedCrop]);
+
+  // Interventions for this batch & zone
+  const [interventions, setInterventions] = useState<UnifiedIntervention[]>(() => {
+    return StorageService.getBatchInterventions(currentBatch?.id || 'batch-tom-088', currentZone?.id);
+  });
+
+  // Reload interventions when batch or zone changes
+  React.useEffect(() => {
+    if (currentBatch) {
+      setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
+    }
+  }, [currentBatch, currentZone]);
+
+  // 📄 Certificate Modal State
+  const [showCertificateModal, setShowCertificateModal] = useState<boolean>(false);
+
+  // 📜 Timeline Category Filter
+  const [timelineFilter, setTimelineFilter] = useState<'all' | 'nutricao' | 'manejo' | 'fitossanidade' | 'colheita'>('all');
+
+  const filteredInterventions = useMemo(() => {
+    if (timelineFilter === 'all') return interventions;
+    return interventions.filter((i) => i.type === timelineFilter);
+  }, [interventions, timelineFilter]);
+
   // Quick Harvest Modal State
   const [showQuickHarvestModal, setShowQuickHarvestModal] = useState<boolean>(false);
-  const [selectedHarvestBatchId, setSelectedHarvestBatchId] = useState<string>(
-    batches.find((b) => b.status === 'active')?.id || batches[0]?.id || ''
-  );
   const [boxCount, setBoxCount] = useState<number>(15);
   const [estimatedKgPerBox, setEstimatedKgPerBox] = useState<number>(18);
   const [harvestSuccessMessage, setHarvestSuccessMessage] = useState<string | null>(null);
 
   // Manual Field Technician Entry State
   const [showManualEntryModal, setShowManualEntryModal] = useState<boolean>(false);
-  const [manualZoneId, setManualZoneId] = useState<string>(zones[0]?.id || 'zone-estufa-01');
-  const [manualBatchId, setManualBatchId] = useState<string>(batches[0]?.id || '');
   const [manualTemplateType, setManualTemplateType] = useState<FieldInspection['templateType']>('ph_ec_manual');
-  const [manualPh, setManualPh] = useState<string>('6.1');
-  const [manualEc, setManualEc] = useState<string>('2.1');
+  const [manualPh, setManualPh] = useState<string>(selectedCrop === 'tomate' ? '6.05' : '6.25');
+  const [manualEc, setManualEc] = useState<string>(selectedCrop === 'tomate' ? '2.15' : '1.85');
   const [manualTemp, setManualTemp] = useState<string>('24.5');
-  const [manualHumidity, setManualHumidity] = useState<string>('68');
+  const [manualHumidity, setManualHumidity] = useState<string>('72');
   const [manualFindings, setManualFindings] = useState<string>('');
   const [manualCorrectiveAction, setManualCorrectiveAction] = useState<string>('');
   const [manualSeverity, setManualSeverity] = useState<FieldInspection['severity']>('normal');
   const [manualSuccessMessage, setManualSuccessMessage] = useState<string | null>(null);
 
+  // Switch crop handler
+  const handleCropChange = (crop: 'tomate' | 'locote') => {
+    setSelectedCrop(crop);
+    const newZones = zones.filter((z) => z.cropType === crop);
+    if (newZones.length > 0) {
+      setActiveZoneId(newZones[0].id);
+      onSelectZone(newZones[0].id);
+    }
+    // Update default manual values based on agronomic targets
+    if (crop === 'tomate') {
+      setManualPh('6.05');
+      setManualEc('2.15');
+    } else {
+      setManualPh('6.25');
+      setManualEc('1.85');
+    }
+  };
+
+  // Switch zone handler
+  const handleZoneChange = (zoneId: string) => {
+    setActiveZoneId(zoneId);
+    onSelectZone(zoneId);
+  };
+
+  // Daily voice briefing
+  const handlePlayBriefing = () => {
+    const isTomato = selectedCrop === 'tomate';
+    const speech = isPt
+      ? `Olá, produtor! Aqui é o Don Mateo. Estamos monitorando o cultivo de ${isTomato ? 'Tomates' : 'Locote Verde'}. A ${currentZone.name} está operando com pH e condutividade adequados. O histórico do lote está atualizado e pronto para emissão de certificado. Boa colheita!`
+      : `¡Hola, amigo productor! Aquí Don Mateo. Estamos monitoreando el cultivo de ${isTomato ? 'Tomates' : 'Locote Verde'}. El ${currentZone.name} opera con pH y conductividad adecuados. El historial del lote está al día y listo para emitir certificado. ¡Buena jornada!`;
+
+    VoiceAssistantService.speak(speech, lang);
+  };
+
+  // Save manual field entry & append to unified timeline
   const handleSaveManualEntry = () => {
     const phNum = parseFloat(manualPh) || 6.1;
     const ecNum = parseFloat(manualEc) || 2.1;
     const tempNum = parseFloat(manualTemp) || 24.5;
-    const zoneObj = zones.find((z) => z.id === manualZoneId) || zones[0];
-    const batchObj = batches.find((b) => b.id === manualBatchId) || batches.find((b) => b.zoneId === manualZoneId) || batches[0];
+    const humNum = parseFloat(manualHumidity) || 72;
 
     const newInspection: FieldInspection = {
       id: `insp-man-${Date.now()}`,
       tenantId: currentUser.tenantId || 'tenant-agronorte-demo',
       templateType: manualTemplateType,
-      zoneId: manualZoneId,
-      batchId: batchObj?.id,
+      zoneId: currentZone.id,
+      batchId: currentBatch.id,
       inspectorName: currentUser.name || 'Técnico de Campo Agronorte',
       inspectedAt: new Date().toISOString(),
       phManual: phNum,
       ecManual: ecNum,
       findings: manualFindings.trim() || (isPt
-        ? `Lançamento manual realizado na ${zoneObj.name}. Solução com pH ${phNum} e EC ${ecNum} mS/cm aferidos com instrumentos portáteis de bancada.`
-        : `Carga manual realizada en ${zoneObj.name}. Solución con pH ${phNum} y EC ${ecNum} mS/cm medidos con instrumentos portátiles.`),
+        ? `Lançamento técnico realizado na ${currentZone.name}. Solução com pH ${phNum} e EC ${ecNum} mS/cm aferidos em bancada.`
+        : `Carga técnica realizada en ${currentZone.name}. Solución con pH ${phNum} y EC ${ecNum} mS/cm medidos en bancada.`),
       severity: manualSeverity,
       correctiveActionTaken: manualCorrectiveAction.trim() || undefined,
       syncStatus: 'synced',
@@ -108,9 +203,40 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
     StorageService.addInspection(newInspection, currentUser);
 
+    // Also add to UnifiedIntervention for the batch history timeline & certificate
+    const newIntervention: UnifiedIntervention = {
+      id: `int-man-${Date.now()}`,
+      batchId: currentBatch.id,
+      zoneId: currentZone.id,
+      timestamp: new Date().toISOString(),
+      type: manualTemplateType === 'fitossanidade' ? 'fitossanidade' : manualTemplateType === 'ph_ec_manual' ? 'nutricao' : 'manejo',
+      title: manualTemplateType === 'fitossanidade'
+        ? (isPt ? 'Inspeção Fitossanitária de Campo' : 'Inspección Fitosanitaria de Campo')
+        : manualTemplateType === 'ph_ec_manual'
+        ? (isPt ? 'Aferição de pH & Condutividade Nutritiva' : 'Calibración de pH y Conductividad Nutritiva')
+        : (isPt ? 'Manejo Operacional de Estufa' : 'Manejo Operacional de Invernadero'),
+      productOrAction: manualFindings.trim() || (isPt ? 'Ajuste de solução e medição instrumental' : 'Ajuste de solución y medición'),
+      dosage: `pH ${phNum} • EC ${ecNum} mS/cm`,
+      gracePeriodDays: 0,
+      ph: phNum,
+      ec: ecNum,
+      temperature: tempNum,
+      humidity: humNum,
+      operatorName: currentUser.name || 'Técnico de Campo',
+      operatorRole: currentUser.role === 'agronomist' ? 'Engenheiro Agrônomo' : 'Técnico Agrícola',
+      severity: manualSeverity,
+      notes: manualCorrectiveAction.trim() ? `${isPt ? 'Ação:' : 'Acción:'} ${manualCorrectiveAction}` : undefined,
+      verifiedHash: `sha256_bpa_${Date.now().toString(16)}`
+    };
+
+    StorageService.addIntervention(newIntervention, currentUser);
+
+    // Update local state
+    setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
+
     const successTxt = isPt
-      ? `Apontamento do técnico gravado com sucesso para a ${zoneObj.name}! (pH: ${phNum}, EC: ${ecNum} mS/cm)`
-      : `¡Apunte técnico guardado con éxito para ${zoneObj.name}! (pH: ${phNum}, EC: ${ecNum} mS/cm)`;
+      ? `Apontamento gravado com sucesso para a ${currentZone.name}! (pH: ${phNum}, EC: ${ecNum} mS/cm)`
+      : `¡Apunte técnico guardado con éxito para ${currentZone.name}! (pH: ${phNum}, EC: ${ecNum} mS/cm)`;
 
     setManualSuccessMessage(successTxt);
     VoiceAssistantService.speak(successTxt, lang);
@@ -121,33 +247,19 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       setManualFindings('');
       setManualCorrectiveAction('');
       if (onInspectionSaved) onInspectionSaved();
-      if (onHarvestSaved) onHarvestSaved();
-    }, 2400);
+    }, 2000);
   };
 
-  // Status values
-  const tomatoBatch = batches.find((b) => b.crop.includes('Tomate')) || batches[0];
-  const pepperBatch = batches.find((b) => b.crop.includes('Locote')) || batches[1];
-
-  // Daily voice briefing
-  const handlePlayBriefing = () => {
-    const speech = isPt
-      ? 'Bom dia, produtor! Aqui é o Don Mateo. Nossas 12 estufas em Guayaibí estão operando com mais de 350 famílias cooperadas conectadas. O Tomate Saladete na Estufa 1 está com água e nutrientes no ponto ideal. Na Estufa 2 de Locote, está quente nesta manhã, lembre-se de abrir as cortinas laterais. Boa colheita!'
-      : '¡Buen día, amigo productor! Aquí Don Mateo. Nuestros 12 invernaderos en Guayaibí están activos con más de 350 familias conectadas. El Tomate Saladete en Invernadero 1 tiene agua y nutrientes ideales. En Invernadero 2 de Locote hace calor matutino, recuerda ventilar bien. ¡Buena jornada de trabajo!';
-
-    VoiceAssistantService.speak(speech, lang);
-  };
-
+  // Save Harvest and add to timeline
   const handleSaveHarvest = () => {
-    const batch = batches.find((b) => b.id === selectedHarvestBatchId) || batches[0];
     const totalKg = boxCount * estimatedKgPerBox;
 
     const currentHarvests = StorageService.getHarvests();
     const newHarvest: HarvestRecord = {
       id: `col-${Date.now().toString().slice(-5)}`,
       tenantId: currentUser.tenantId,
-      batchId: batch.id,
-      harvestCode: `COL-${batch.crop.includes('Tomate') ? 'TOM' : 'LOC'}-${Date.now().toString().slice(-4)}`,
+      batchId: currentBatch.id,
+      harvestCode: `COL-${selectedCrop === 'tomate' ? 'TOM' : 'LOC'}-${Date.now().toString().slice(-4)}`,
       harvestedAt: new Date().toISOString(),
       grossWeightKg: totalKg + (boxCount * 1.5),
       tareWeightKg: boxCount * 1.5,
@@ -161,7 +273,27 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
     StorageService.saveHarvests([newHarvest, ...currentHarvests]);
 
-    const cropName = batch.crop.includes('Tomate') ? 'Tomate' : 'Locote';
+    // Add harvest intervention to unified timeline
+    const harvestIntervention: UnifiedIntervention = {
+      id: `int-harv-${Date.now()}`,
+      batchId: currentBatch.id,
+      zoneId: currentZone.id,
+      timestamp: new Date().toISOString(),
+      type: 'colheita',
+      title: isPt ? 'Colheita Comercial de 1ª Linha' : 'Cosecha Comercial de 1ª Calidad',
+      productOrAction: `${boxCount} caixas (${totalKg} kg líquidos colhidos)`,
+      dosage: `${estimatedKgPerBox} kg/caixa`,
+      operatorName: currentUser.name || 'Operador de Colheita',
+      operatorRole: 'Operador de Campo',
+      severity: 'normal',
+      notes: isPt ? 'Frutos selecionados de primeira qualidade. Lote atualizado no estoque.' : 'Frutos seleccionados de primera calidad.',
+      verifiedHash: `sha256_bpa_harv_${Date.now().toString(16)}`
+    };
+
+    StorageService.addIntervention(harvestIntervention, currentUser);
+    setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
+
+    const cropName = selectedCrop === 'tomate' ? 'Tomate' : 'Locote';
     const successTxt = isPt
       ? `Colheita registrada com sucesso! ${boxCount} caixas (${totalKg} kg) de ${cropName}.`
       : `¡Cosecha guardada con éxito! ${boxCount} cajas (${totalKg} kg) de ${cropName}.`;
@@ -173,16 +305,45 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       setShowQuickHarvestModal(false);
       setHarvestSuccessMessage(null);
       if (onHarvestSaved) onHarvestSaved();
-    }, 2800);
+    }, 2400);
   };
+
+  // Agronomic ideal targets based on crop
+  const targets = selectedCrop === 'tomate'
+    ? {
+        phMin: 5.8,
+        phMax: 6.2,
+        ecMin: 1.8,
+        ecMax: 2.5,
+        tempMin: 22,
+        tempMax: 28,
+        phCurrent: 6.08,
+        ecCurrent: 2.18,
+        tempCurrent: 24.5,
+        humidityCurrent: 74,
+        stage: isPt ? 'Dia 48 de 90 • Floração & Frutificação Plena' : 'Día 48 de 90 • Floración y Fructificación Plena'
+      }
+    : {
+        phMin: 6.0,
+        phMax: 6.5,
+        ecMin: 1.6,
+        ecMax: 2.2,
+        tempMin: 24,
+        tempMax: 30,
+        phCurrent: 6.25,
+        ecCurrent: 1.95,
+        tempCurrent: 26.8,
+        humidityCurrent: 70,
+        stage: isPt ? 'Dia 56 de 110 • Pegamento de Frutos & Engorde' : 'Día 56 de 110 • Cuajado de Frutos y Engorde'
+      };
 
   return (
     <div className="space-y-6 pb-24">
-      {/* 🌾 TOP WELCOME & EASY BAR */}
-      <div className="bg-linear-to-r from-primary to-primary-container rounded-3xl p-5 sm:p-7 text-on-primary shadow-xl border-2 border-primary-fixed/20 relative overflow-hidden">
-        {/* Background decorative watermark */}
+      {/* 🌾 BARRA SUPERIOR INSTITUCIONAL & MODO PRODUTOR */}
+      <div className="bg-linear-to-r from-emerald-800 via-primary to-emerald-950 rounded-3xl p-5 sm:p-7 text-white shadow-xl border-2 border-emerald-500/20 relative overflow-hidden">
+        {/* Marca d'água decorativa */}
         <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none flex items-center pr-6">
-          <Sprout className="w-64 h-64 text-on-primary" />
+          <Sprout className="w-64 h-64 text-white" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -197,40 +358,38 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
             <div>
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="bg-primary-fixed/25 text-on-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-on-primary/30">
-                  {t.easyModeBadge}
+                <span className="bg-emerald-500/30 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-emerald-400/40">
+                  {isPt ? 'Modo Campo Fácil • Rastreabilidade Unificada' : 'Modo Campo Fácil • Trazabilidad Unificada'}
                 </span>
-                <span className="text-xs text-on-primary/90 font-semibold">
+                <span className="text-xs text-emerald-100/90 font-semibold">
                   350+ Familias Conectadas • Guayaibí, San Pedro
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                {isPt ? 'Painel do Produtor Rural' : 'Panel del Productor'}
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+                {isPt ? 'Monitoramento de Estufas & Rastreabilidade' : 'Monitoreo de Invernaderos y Trazabilidad'}
               </h1>
-              <p className="text-sm sm:text-base text-on-primary/90 mt-1 max-w-xl">
+              <p className="text-sm sm:text-base text-emerald-100/90 mt-1 max-w-xl">
                 {isPt
-                  ? 'Controle simplificado das 12 estufas ativas com poucos toques e auxílio de voz do Don Mateo.'
-                  : 'Control simplificado de los 12 invernaderos activos con pocos toques y apoyo por voz de Don Mateo.'}
+                  ? 'Controle unificado de sensores, pragas e histórico completo de manejo para emissão de certificado oficial.'
+                  : 'Control unificado de sensores, plagas e historial completo de manejo para emisión de certificado oficial.'}
               </p>
             </div>
           </div>
 
-          {/* Actions on Top Right */}
+          {/* Botões de Ação no Topo Direito */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Audio Briefing Button */}
             <button
               onClick={handlePlayBriefing}
-              className="px-4 py-2.5 rounded-full bg-secondary text-on-secondary font-bold text-xs sm:text-sm hover:bg-secondary-container hover:text-on-secondary-container transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-95"
+              className="px-4 py-2.5 rounded-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs sm:text-sm transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-95"
               title="Ouvir resumo do dia"
             >
               <Volume2 className="w-4 h-4" />
               <span>{isPt ? 'Ouvir Don Mateo' : 'Escuchar Don Mateo'}</span>
             </button>
 
-            {/* Switch to Expert ERP Mode */}
             <button
               onClick={onSwitchToExpert}
-              className="px-4 py-2.5 rounded-full bg-surface-container-lowest/20 hover:bg-surface-container-lowest/30 text-on-primary font-semibold text-xs sm:text-sm transition-all border border-on-primary/30 flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer"
             >
               <Layers className="w-4 h-4" />
               <span>{t.switchToExpertMode}</span>
@@ -239,171 +398,407 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         </div>
       </div>
 
-      {/* 🚜 4 BIG DIRECT ACTION CARDS (Tactile & High Contrast) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* CARD 1: ESTUFAS E ÁGUA */}
-        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border-2 border-outline-variant/30 hover:border-primary transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-md">
-                  <Sprout className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-on-surface">
-                      {t.quickGreenhouseTitle}
-                    </h2>
-                    <span className="bg-primary/15 text-primary text-[11px] font-extrabold px-2 py-0.5 rounded-full border border-primary/20">
-                      12 Ativos
-                    </span>
-                  </div>
-                  <span className="text-xs text-on-surface-variant">
-                    {isPt ? 'Água, adubo e clima em tempo real' : 'Agua, nutrición y clima en tiempo real'}
-                  </span>
-                </div>
-              </div>
-              <span className="flex h-3 w-3 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+      {/* 🎯 SELETOR CENTRAL DE CULTURA: TOMATE vs LOCOTE VERDE (Foco Direto) */}
+      <div className="bg-surface-container-lowest rounded-3xl p-3 sm:p-4 shadow-lg border border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider px-2 shrink-0">
+            {isPt ? 'Cultivo em Foco:' : 'Cultivo Activo:'}
+          </span>
+          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+            {/* Botão Tomate */}
+            <button
+              type="button"
+              onClick={() => handleCropChange('tomate')}
+              className={`px-5 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs ${
+                selectedCrop === 'tomate'
+                  ? 'bg-red-600 text-white shadow-md scale-102 ring-2 ring-red-400'
+                  : 'bg-surface-container-high hover:bg-surface-container text-on-surface-variant'
+              }`}
+            >
+              <span className="text-xl">🍅</span>
+              <span>{isPt ? 'TOMATE' : 'TOMATE'}</span>
+              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
+                {zones.filter((z) => z.cropType === 'tomate').length} Estufas
               </span>
+            </button>
+
+            {/* Botão Locote Verde */}
+            <button
+              type="button"
+              onClick={() => handleCropChange('locote')}
+              className={`px-5 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-xs ${
+                selectedCrop === 'locote'
+                  ? 'bg-emerald-700 text-white shadow-md scale-102 ring-2 ring-emerald-400'
+                  : 'bg-surface-container-high hover:bg-surface-container text-on-surface-variant'
+              }`}
+            >
+              <span className="text-xl">🫑</span>
+              <span>{isPt ? 'LOCOTE VERDE' : 'LOCOTE VERDE'}</span>
+              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
+                {zones.filter((z) => z.cropType === 'locote').length} Estufas
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Botão Oficial: Emitir Certificado do Lote */}
+        <button
+          type="button"
+          onClick={() => setShowCertificateModal(true)}
+          className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer border border-amber-300"
+        >
+          <Award className="w-5 h-5 text-slate-950" />
+          <span>{isPt ? '📄 Emitir Certificado Oficial deste Lote' : '📄 Emitir Certificado Oficial de este Lote'}</span>
+        </button>
+      </div>
+
+      {/* 🏠 SELETOR HORIZONTAL DE ESTUFAS DO CULTIVO SELECIONADO */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        {cropZones.map((z, idx) => {
+          const isSelected = z.id === currentZone.id;
+          const isWarning = z.id === 'zone-estufa-02';
+
+          return (
+            <button
+              key={z.id}
+              onClick={() => handleZoneChange(z.id)}
+              className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2.5 cursor-pointer border-2 shrink-0 ${
+                isSelected
+                  ? 'bg-primary text-on-primary border-primary shadow-md scale-102'
+                  : 'bg-surface-container-lowest text-on-surface border-outline-variant/30 hover:border-primary/50'
+              }`}
+            >
+              <span
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black ${
+                  isSelected ? 'bg-white text-primary' : 'bg-surface-container-high text-on-surface'
+                }`}
+              >
+                {idx + 1}
+              </span>
+              <span className="truncate max-w-[180px] sm:max-w-none">{z.name}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded font-mono uppercase ${
+                  isWarning
+                    ? 'bg-amber-400 text-slate-950 font-black'
+                    : isSelected
+                    ? 'bg-white/25 text-white'
+                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                }`}
+              >
+                {isWarning ? 'Ventilar' : 'Óptimo'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 📡 CARTÃO VIVO DA ESTUFA ATIVA (SENSORES EM TEMPO REAL & METAS AGRONÔMICAS) */}
+      <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-xl border-2 border-primary/30 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-outline-variant/30">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-md shrink-0">
+              <span className="text-3xl">{selectedCrop === 'tomate' ? '🍅' : '🫑'}</span>
             </div>
-
-            {/* Status list of key greenhouses */}
-            <div className="space-y-2.5 my-2 max-h-72 overflow-y-auto pr-1">
-              {zones.map((zone, idx) => {
-                const isWarning = zone.id === 'zone-estufa-02';
-                const isRD = zone.id === 'zone-estufa-12';
-
-                return (
-                  <div
-                    key={zone.id}
-                    onClick={() => onSelectZone(zone.id)}
-                    className={`p-3 rounded-2xl border-2 flex items-center justify-between gap-3 cursor-pointer transition-all hover:scale-[1.01] ${
-                      isWarning
-                        ? 'bg-secondary-fixed/20 border-secondary/30'
-                        : isRD
-                        ? 'bg-amber-50 border-amber-300 dark:bg-amber-950/20 dark:border-amber-700/40'
-                        : 'bg-primary-fixed/20 border-primary/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className={`w-7 h-7 rounded-full font-black flex items-center justify-center text-xs shadow-xs shrink-0 ${
-                          isWarning
-                            ? 'bg-secondary text-on-secondary'
-                            : isRD
-                            ? 'bg-amber-600 text-white'
-                            : 'bg-primary text-on-primary'
-                        }`}
-                      >
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-xs sm:text-sm text-on-surface truncate">
-                          {zone.name}
-                        </h3>
-                        <p
-                          className={`text-[11px] font-semibold flex items-center gap-1 truncate ${
-                            isWarning
-                              ? 'text-secondary'
-                              : isRD
-                              ? 'text-amber-700 dark:text-amber-400'
-                              : 'text-primary'
-                          }`}
-                        >
-                          {isWarning ? (
-                            <>
-                              <Flame className="w-3.5 h-3.5 shrink-0" />
-                              <span>{isPt ? 'Atenção ao calor (29.5°C)' : 'Atención al calor (29.5°C)'}</span>
-                            </>
-                          ) : isRD ? (
-                            <>
-                              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                              <span>{isPt ? 'I+D e Biocontrole IoT' : 'I+D y Biocontrol IoT'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>{zone.cultivar} • pH 6.1</span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
-                        isWarning
-                          ? 'text-secondary bg-surface-container-lowest border-secondary/30'
-                          : isRD
-                          ? 'text-amber-700 bg-surface-container-lowest border-amber-300'
-                          : 'text-primary bg-surface-container-lowest border-primary/30'
-                      }`}
-                    >
-                      {isWarning ? (isPt ? 'Ventilar' : 'Ventilar') : isRD ? 'I+D' : (isPt ? 'Ótimo' : 'Óptimo')}
-                    </span>
-                  </div>
-                );
-              })}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black text-on-surface">
+                  {currentZone.name}
+                </h2>
+                <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/40">
+                  LOTE: {currentBatch?.batchCode || 'LOTE-2026'}
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {currentZone.cultivar} • Sistema {currentZone.systemType} • {targets.stage}
+              </p>
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              onSelectZone('zone-estufa-01');
-              onSwitchToExpert();
-            }}
-            className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-surface-container-high hover:bg-surface-container text-on-surface font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
-          >
-            <span>{isPt ? 'Ver Detalhes e Gráficos das 12 Estufas' : 'Ver Detalles y Gráficos de los 12 Invernaderos'}</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {/* Ações Rápidas da Estufa */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowManualEntryModal(true)}
+              className="px-4 py-2.5 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+            >
+              <FilePenLine className="w-4 h-4" />
+              <span>{isPt ? '+ Lançar Apontamento Técnico' : '+ Cargar Apunte Técnico'}</span>
+            </button>
+
+            <button
+              onClick={() => setShowQuickHarvestModal(true)}
+              className="px-4 py-2.5 rounded-2xl bg-secondary hover:bg-secondary-fixed text-on-secondary font-bold text-xs flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+            >
+              <Package className="w-4 h-4" />
+              <span>{isPt ? 'Registrar Colheita' : 'Anotar Cosecha'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* CARD 2: DIAGNÓSTICO DE PRAGAS COM IA */}
-        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border-2 border-outline-variant/30 hover:border-primary transition-all flex flex-col justify-between">
+        {/* 4 Sensores IoT em Tempo Real com Semáforo Agronômico */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-5">
+          {/* Sensor 1: pH da Calda */}
+          <div className="bg-surface-container-high rounded-2xl p-4 border border-outline-variant/30 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+                <Droplets className="w-3.5 h-3.5 text-blue-500" />
+                pH da Solução
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="my-2">
+              <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
+                {targets.phCurrent}
+              </span>
+              <span className="text-xs text-on-surface-variant font-medium ml-1">pH</span>
+            </div>
+            <div className="text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
+              <span>{isPt ? 'Alvo:' : 'Meta:'} {targets.phMin} - {targets.phMax}</span>
+              <span className="font-bold">✓ Ideal</span>
+            </div>
+          </div>
+
+          {/* Sensor 2: Condutividade Elétrica (EC) */}
+          <div className="bg-surface-container-high rounded-2xl p-4 border border-outline-variant/30 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                Condutividade (EC)
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="my-2">
+              <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
+                {targets.ecCurrent}
+              </span>
+              <span className="text-xs text-on-surface-variant font-medium ml-1">mS/cm</span>
+            </div>
+            <div className="text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
+              <span>{isPt ? 'Alvo:' : 'Meta:'} {targets.ecMin} - {targets.ecMax}</span>
+              <span className="font-bold">✓ Equilibrada</span>
+            </div>
+          </div>
+
+          {/* Sensor 3: Temperatura */}
+          <div className="bg-surface-container-high rounded-2xl p-4 border border-outline-variant/30 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+                <Thermometer className="w-3.5 h-3.5 text-rose-500" />
+                {isPt ? 'Temperatura' : 'Temperatura'}
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="my-2">
+              <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
+                {targets.tempCurrent}
+              </span>
+              <span className="text-xs text-on-surface-variant font-medium ml-1">°C</span>
+            </div>
+            <div className="text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
+              <span>{isPt ? 'Alvo:' : 'Meta:'} {targets.tempMin} - {targets.tempMax}°C</span>
+              <span className="font-bold">✓ Conforto</span>
+            </div>
+          </div>
+
+          {/* Sensor 4: Umidade Relativa */}
+          <div className="bg-surface-container-high rounded-2xl p-4 border border-outline-variant/30 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-teal-500" />
+                {isPt ? 'Umidade do Ar' : 'Humedad'}
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="my-2">
+              <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
+                {targets.humidityCurrent}
+              </span>
+              <span className="text-xs text-on-surface-variant font-medium ml-1">% UR</span>
+            </div>
+            <div className="text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
+              <span>{isPt ? 'Faixa:' : 'Rango:'} 65% - 80%</span>
+              <span className="font-bold">✓ Ventilação OK</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 📜 LINHA DO TEMPO UNIFICADA DA ESTUFA (HISTÓRICO COMPLETO DA PLANTA) */}
+      <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border border-outline-variant/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/30">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-black text-on-surface flex items-center gap-2">
+                <span>📜</span>
+                <span>{isPt ? 'Linha do Tempo da Estufa (Passo a Passo da Planta)' : 'Línea de Tiempo del Invernadero (Historial de la Planta)'}</span>
+              </h3>
+              <span className="text-xs bg-primary-container text-on-primary-container font-mono font-bold px-2 py-0.5 rounded-full">
+                {filteredInterventions.length} {isPt ? 'passos' : 'pasos'}
+              </span>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {isPt
+                ? 'Todos os manejos, produtos aplicados, doses, datas, horários e responsáveis auditados.'
+                : 'Todos los manejos, productos aplicados, dosis, fechas, horarios y responsables auditados.'}
+            </p>
+          </div>
+
+          {/* Filtros da Linha do Tempo */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {[
+              { id: 'all', label: isPt ? 'Todos' : 'Todos' },
+              { id: 'nutricao', label: isPt ? 'Nutrição' : 'Nutrición' },
+              { id: 'manejo', label: isPt ? 'Manejo' : 'Manejo' },
+              { id: 'fitossanidade', label: isPt ? 'Pragas & Sanidade' : 'Sanidad' },
+              { id: 'colheita', label: isPt ? 'Colheitas' : 'Cosechas' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setTimelineFilter(tab.id as any)}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
+                  timelineFilter === tab.id
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Linha do Tempo Cronológica */}
+        <div className="relative pl-6 sm:pl-8 space-y-4 pt-4 before:absolute before:left-3 sm:before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-outline-variant/40">
+          {filteredInterventions.map((item, idx) => {
+            const d = new Date(item.timestamp);
+            const dateStr = d.toLocaleDateString(isPt ? 'pt-BR' : 'es-PY');
+            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const typeConfig = {
+              nutricao: { icon: Droplets, color: 'bg-blue-600', text: 'text-blue-600', badge: isPt ? 'Nutrição' : 'Nutrición' },
+              manejo: { icon: Sprout, color: 'bg-emerald-600', text: 'text-emerald-600', badge: isPt ? 'Manejo' : 'Manejo' },
+              fitossanidade: { icon: ShieldCheck, color: 'bg-amber-600', text: 'text-amber-600', badge: isPt ? 'Sanidade' : 'Sanidad' },
+              sensor_leitura: { icon: Activity, color: 'bg-purple-600', text: 'text-purple-600', badge: isPt ? 'Calibração' : 'Calibración' },
+              colheita: { icon: Package, color: 'bg-rose-600', text: 'text-rose-600', badge: isPt ? 'Colheita' : 'Cosecha' }
+            }[item.type] || { icon: CheckCircle2, color: 'bg-slate-600', text: 'text-slate-600', badge: item.type };
+
+            const Icon = typeConfig.icon;
+
+            return (
+              <div key={item.id} className="relative group">
+                {/* Node Bullet */}
+                <div
+                  className={`absolute -left-6 sm:-left-8 top-1 w-6 h-6 rounded-full ${typeConfig.color} text-white flex items-center justify-center shadow-xs`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+
+                {/* Card de Conteúdo do Passo */}
+                <div className="bg-surface-container-high/60 hover:bg-surface-container-high rounded-2xl p-3.5 sm:p-4 border border-outline-variant/30 transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/70 dark:bg-black/30 ${typeConfig.text}`}>
+                        {typeConfig.badge}
+                      </span>
+                      <h4 className="text-sm font-bold text-on-surface">
+                        {item.title}
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-on-surface-variant" />
+                        {dateStr}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-on-surface-variant" />
+                        {timeStr}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-on-surface font-medium mt-1">
+                    <span className="font-semibold text-primary">{item.productOrAction}</span>
+                    {item.dosage && <span className="text-on-surface-variant"> ({item.dosage})</span>}
+                  </p>
+
+                  {item.notes && (
+                    <p className="text-[11px] text-on-surface-variant italic mt-1 bg-surface-container-lowest/70 p-2 rounded-xl border border-outline-variant/20">
+                      "{item.notes}"
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-outline-variant/20 text-[11px] text-on-surface-variant">
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-primary" />
+                      <span className="font-bold text-on-surface">{item.operatorName}</span>
+                      <span className="text-outline">({item.operatorRole || 'Responsável'})</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {item.gracePeriodDays !== undefined && (
+                        <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                          {item.gracePeriodDays === 0 ? '✓ Carência Zero (Sem Resíduo)' : `Carência: ${item.gracePeriodDays}d`}
+                        </span>
+                      )}
+                      <span className="text-[9px] font-mono text-outline">
+                        HASH: {item.verifiedHash.slice(0, 14)}...
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 🚜 2 CARDS ADICIONAIS DE AÇÃO RÁPIDA (DIAGNÓSTICO COM IA & COLHEITA) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* CARD A: SACAR FOTO A PRAGA (IA DON MATEO) */}
+        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border border-outline-variant/30 hover:border-primary transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-tertiary-container text-on-tertiary-container flex items-center justify-center shadow-md">
-                <Camera className="w-6 h-6 text-tertiary" />
+              <div className="w-12 h-12 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-md">
+                <Camera className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-on-surface">
                   {t.quickPestTitle}
                 </h2>
                 <span className="text-xs text-on-surface-variant">
-                  {isPt ? 'Identificação na hora por foto' : 'Detección inmediata con foto'}
+                  {isPt ? 'Detecção instantânea com Don Mateo 3D' : 'Detección inmediata con foto'}
                 </span>
               </div>
             </div>
 
             <p className="text-sm text-on-surface-variant leading-relaxed my-2">
               {isPt
-                ? 'Viu folhas com pó branco, brotos furados ou frutos com manchas pretas? Tire uma foto com o celular ou grave um áudio para receber a recomendação falada na hora.'
+                ? 'Viu folhas com pó branco, lagartas ou manchas nos tomates ou locotes? Tire uma foto para ouvir o diagnóstico agronômico e a recomendação de controle biológico em segundos.'
                 : '¿Viste hojas con polvillo blanco, orugas o manchas en frutos? Saca una foto o graba un audio para escuchar la solución agronómica de inmediato.'}
             </p>
 
-            <div className="bg-tertiary-fixed/20 border border-tertiary/30 rounded-2xl p-3 my-3 flex items-center gap-2.5 text-xs text-on-surface">
-              <Sparkles className="w-4 h-4 text-tertiary shrink-0" />
+            <div className="bg-surface-container-high rounded-2xl p-3 my-3 flex items-center gap-2 text-xs text-on-surface-variant">
+              <Sparkles className="w-4 h-4 text-primary shrink-0" />
               <span>
-                {isPt
-                  ? 'Reconhece Oídio, Míldio, Traça-do-tomateiro, Mosca-branca e Deficiência de Cálcio.'
-                  : 'Reconoce Oídio, Mildiu, Polilla del Tomate, Mosca Blanca y Falta de Calcio.'}
+                {selectedCrop === 'tomate'
+                  ? 'Reconhece Oídio, Míldio, Traça-do-Tomateiro e Deficiência de Cálcio.'
+                  : 'Reconhece Ácaro-Branco, Trips, Antracnose e Podridão Apical.'}
               </span>
             </div>
           </div>
 
           <button
             onClick={onOpenPestDiagnosis}
-            className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-tertiary text-on-tertiary font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 active:scale-98 transition-all shadow-md"
+            className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:bg-primary-container hover:text-on-primary-container active:scale-98 transition-all shadow-md"
           >
             <Camera className="w-5 h-5" />
             <span>{isPt ? 'Abrir Câmera para Diagnóstico' : 'Abrir Cámara para Diagnóstico'}</span>
           </button>
         </div>
 
-        {/* CARD 3: REGISTRAR COLHEITA DO DIA */}
-        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border-2 border-outline-variant/30 hover:border-primary transition-all flex flex-col justify-between">
+        {/* CARD B: REGISTRO DE COLHEITA DO DIA */}
+        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border border-outline-variant/30 hover:border-secondary transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-md">
@@ -421,97 +816,42 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
             <p className="text-sm text-on-surface-variant leading-relaxed my-2">
               {isPt
-                ? 'Terminou o turno de colheita? Informe quantas caixas foram colhidas para atualizar o estoque e emitir o código de rastreamento com selo de qualidade.'
+                ? 'Terminou o turno de colheita? Informe quantas caixas foram colhidas para atualizar o estoque e emitir as etiquetas com rastreamento oficial.'
                 : '¿Terminaste de cosechar? Indica cuántas cajas se recogieron hoy para sumar al stock y generar las etiquetas con trazabilidad oficial.'}
             </p>
 
             <div className="bg-surface-container-high rounded-2xl p-3 my-3 flex items-center justify-between text-xs">
               <span className="font-semibold text-on-surface">
-                {isPt ? 'Lote Ativo Hoje:' : 'Lote de Hoy:'}
+                {isPt ? 'Lote Ativo Selecionado:' : 'Lote de Hoy:'}
               </span>
-              <span className="font-bold text-primary">
-                {tomatoBatch?.batchCode || 'LOTE-TOM-2026-088'}
+              <span className="font-bold text-primary font-mono">
+                {currentBatch?.batchCode || 'LOTE-2026'}
               </span>
             </div>
           </div>
 
           <button
             onClick={() => setShowQuickHarvestModal(true)}
-            className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:bg-primary-container hover:text-on-primary-container active:scale-98 transition-all shadow-md"
+            className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-secondary text-on-secondary font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:bg-secondary-container hover:text-on-secondary-container active:scale-98 transition-all shadow-md"
           >
             <Plus className="w-5 h-5" />
             <span>{isPt ? 'Registrar Caixas Colhidas' : 'Anotar Cajas Cosechadas'}</span>
           </button>
         </div>
-
-        {/* CARD 4: APONTAMENTO TÉCNICO DE CAMPO (ENTRADA MANUAL) */}
-        <div className="bg-surface-container-lowest rounded-3xl p-6 shadow-lg border-2 border-outline-variant/30 hover:border-emerald-500 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-3.5 mb-4">
-              <div className="w-13 h-13 rounded-2xl bg-linear-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-md shrink-0">
-                <ClipboardCheck className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-on-surface">
-                    {isPt ? 'Apontamento Técnico' : 'Planilla Técnica'}
-                  </h2>
-                  <span className="text-[10px] bg-emerald-950 text-emerald-300 font-mono px-2 py-0.5 rounded-full border border-emerald-600/40 font-bold">
-                    {isPt ? 'Entrada Manual' : 'Carga Manual'}
-                  </span>
-                </div>
-                <span className="text-xs text-on-surface-variant">
-                  {isPt ? 'Lançamento manual de pH, EC, clima e manejo' : 'Carga de pH, EC, clima y manejo agronómico'}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-sm text-on-surface-variant leading-relaxed my-2">
-              {isPt
-                ? 'Opção para o técnico de campo e agrônomo inserirem medições manuais de pHmetro, condutivímetro portátil, temperatura da calda e notas de manejo.'
-                : 'Opción para el técnico de campo y agrónomo ingresar mediciones manuales de pHmetro, conductímetro portátil, temperatura y notas de manejo.'}
-            </p>
-
-            <div className="flex flex-wrap gap-1.5 my-3">
-              <span className="text-[11px] bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                <span>🧪</span>
-                {isPt ? 'pH & EC Manual' : 'pH y EC Manual'}
-              </span>
-              <span className="text-[11px] bg-surface-container-high px-2.5 py-1 rounded-full text-on-surface-variant flex items-center gap-1">
-                <span>🌡️</span>
-                {isPt ? 'Temp & Clima' : 'Temp y Clima'}
-              </span>
-              <span className="text-[11px] bg-surface-container-high px-2.5 py-1 rounded-full text-on-surface-variant flex items-center gap-1">
-                <span>📋</span>
-                {isPt ? 'Diário Oficial BPA' : 'Libro Oficial BPA'}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2 mt-4">
-            <button
-              id="btn-open-manual-entry"
-              type="button"
-              onClick={() => setShowManualEntryModal(true)}
-              className="w-full py-3.5 px-4 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all shadow-md"
-            >
-              <FilePenLine className="w-5 h-5" />
-              <span>{isPt ? 'Lançar Dados Manuais de Campo' : 'Cargar Datos Manuales de Campo'}</span>
-            </button>
-
-            {onOpenFieldInspections && (
-              <button
-                type="button"
-                onClick={onOpenFieldInspections}
-                className="w-full py-1.5 px-3 text-xs text-on-surface-variant hover:text-emerald-700 dark:hover:text-emerald-400 font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-              >
-                <span>{isPt ? 'Ver Histórico de Inspeções' : 'Ver Historial de Inspecciones'}</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
       </div>
+
+      {/* 📄 MODAL DO CERTIFICADO OFICIAL DE RASTREABILIDADE */}
+      {showCertificateModal && currentBatch && (
+        <BatchCertificateModal
+          lang={lang}
+          batch={currentBatch}
+          zone={currentZone}
+          interventions={interventions}
+          currentUser={currentUser}
+          onClose={() => setShowCertificateModal(false)}
+          onOpenPublicTrace={onOpenPublicTrace}
+        />
+      )}
 
       {/* 📦 QUICK HARVEST DIALOG MODAL */}
       {showQuickHarvestModal && (
@@ -527,7 +867,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     {t.quickHarvestTitle}
                   </h3>
                   <p className="text-xs text-on-surface-variant">
-                    {isPt ? 'Registro Rápido de Campo' : 'Registro Fácil'}
+                    {currentZone.name} • {selectedCrop === 'tomate' ? 'Tomate' : 'Locote'}
                   </p>
                 </div>
               </div>
@@ -552,372 +892,115 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-4 py-4">
-                {/* Select Crop / Batch */}
+              <div className="py-4 space-y-5">
                 <div>
-                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider block mb-1.5">
-                    {isPt ? '1. Escolha o Lote / Cultura' : '1. Elige el Lote / Cultivo'}
+                  <label className="text-xs font-semibold text-on-surface-variant block mb-1">
+                    {isPt ? 'Quantidade de Caixas Colhidas:' : 'Cantidad de Cajas Cosechadas:'}
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {batches
-                      .filter((b) => b.status === 'active')
-                      .slice(0, 4)
-                      .map((b) => (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() => setSelectedHarvestBatchId(b.id)}
-                          className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                            selectedHarvestBatchId === b.id
-                              ? 'border-primary bg-primary-fixed/20 text-on-surface font-bold shadow-xs'
-                              : 'border-outline-variant/40 bg-surface-container-low text-on-surface-variant'
-                          }`}
-                        >
-                          <span className="text-xs font-extrabold block text-primary">
-                            {b.crop}
-                          </span>
-                          <span className="text-[11px] block truncate text-on-surface">
-                            {b.cultivar}
-                          </span>
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Box Counter */}
-                <div>
-                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider block mb-1.5">
-                    {isPt ? '2. Quantas caixas colheu?' : '2. ¿Cuántas cajas cosechaste?'}
-                  </label>
-                  <div className="flex items-center justify-between gap-3 bg-surface-container-high rounded-2xl p-2">
+                  <div className="flex items-center justify-center gap-4 bg-surface-container-high p-4 rounded-2xl">
                     <button
                       type="button"
-                      onClick={() => setBoxCount((prev) => Math.max(1, prev - 5))}
-                      className="w-12 h-12 rounded-xl bg-surface-container-lowest text-on-surface font-bold text-lg shadow-xs hover:bg-surface-container cursor-pointer flex items-center justify-center"
+                      onClick={() => setBoxCount(Math.max(1, boxCount - 1))}
+                      className="w-12 h-12 rounded-xl bg-surface hover:bg-surface-container text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95"
                     >
-                      <Minus className="w-5 h-5" />
+                      <Minus className="w-6 h-6" />
                     </button>
-                    <div className="text-center">
-                      <span className="text-3xl font-black text-primary block">
-                        {boxCount}
-                      </span>
-                      <span className="text-xs text-on-surface-variant">
-                        {isPt ? 'caixas' : 'cajas'} (~{boxCount * estimatedKgPerBox} kg)
-                      </span>
-                    </div>
+                    <span className="text-4xl font-extrabold text-primary font-mono w-20 text-center">
+                      {boxCount}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setBoxCount((prev) => prev + 5)}
-                      className="w-12 h-12 rounded-xl bg-primary text-on-primary font-bold text-lg shadow-xs hover:bg-primary-container cursor-pointer flex items-center justify-center"
+                      onClick={() => setBoxCount(boxCount + 1)}
+                      className="w-12 h-12 rounded-xl bg-surface hover:bg-surface-container text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95"
                     >
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-6 h-6" />
                     </button>
                   </div>
-
-                  {/* Quick Preset Buttons */}
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    {[10, 20, 35, 50].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setBoxCount(num)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold cursor-pointer transition-colors ${
-                          boxCount === num
-                            ? 'bg-primary text-on-primary'
-                            : 'bg-surface-container hover:bg-surface-container-highest text-on-surface'
-                        }`}
-                      >
-                        {num} cx
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
-                {/* Confirm Action */}
-                <div className="pt-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveHarvest}
-                    className="w-full py-4 rounded-2xl bg-primary text-on-primary font-extrabold text-base shadow-lg hover:bg-primary-container hover:text-on-primary-container active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>{isPt ? 'Salvar Colheita no Sistema' : 'Confirmar Cosecha'}</span>
-                  </button>
+                <div className="bg-primary/10 rounded-2xl p-4 flex items-center justify-between border border-primary/20">
+                  <span className="text-xs font-medium text-on-surface">
+                    {isPt ? 'Total Estimado (kg):' : 'Total Estimado (kg):'}
+                  </span>
+                  <span className="text-xl font-extrabold text-primary font-mono">
+                    {boxCount * estimatedKgPerBox} kg
+                  </span>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveHarvest}
+                  className="w-full py-3.5 rounded-2xl bg-primary text-on-primary font-bold text-base shadow-lg hover:bg-primary-container hover:text-on-primary-container transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>{isPt ? 'Confirmar e Salvar Colheita' : 'Confirmar y Guardar Cosecha'}</span>
+                </button>
               </div>
             )}
           </div>
         </div>
       )}
-      {/* 📋 MODAL DE APONTAMENTO MANUAL DO TÉCNICO DE CAMPO */}
+
+      {/* 📝 MODAL DE APONTAMENTO TÉCNICO DE CAMPO (ENTRADA MANUAL) */}
       {showManualEntryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-surface-container-lowest rounded-3xl shadow-2xl border-2 border-emerald-500/40 w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="bg-linear-to-r from-emerald-950 via-emerald-900 to-stone-950 p-4 text-white flex items-center justify-between shrink-0 border-b border-emerald-700/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-surface-container-lowest rounded-3xl shadow-2xl border-2 border-emerald-600/40 w-full max-w-lg p-5 sm:p-6 my-auto animate-in zoom-in-95 duration-200 text-on-surface">
+            <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-700/60 text-emerald-200 flex items-center justify-center ring-1 ring-emerald-400/40">
-                  <ClipboardCheck className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 rounded-2xl bg-emerald-700 text-white flex items-center justify-center shadow-md shrink-0">
+                  <ClipboardCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-white leading-tight">
+                  <h3 className="font-bold text-lg text-on-surface">
                     {isPt ? 'Apontamento Técnico de Campo' : 'Planilla Técnica de Campo'}
                   </h3>
-                  <p className="text-xs text-emerald-200/80 mt-0.5 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>{currentUser.name} • {isPt ? 'Entrada Manual Oficial' : 'Carga Manual Oficial'}</span>
+                  <p className="text-xs text-on-surface-variant font-medium">
+                    {currentZone.name} • {currentBatch?.batchCode}
                   </p>
                 </div>
               </div>
               <button
-                type="button"
-                onClick={() => {
-                  setShowManualEntryModal(false);
-                  setManualSuccessMessage(null);
-                }}
-                className="p-1.5 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer"
+                onClick={() => setShowManualEntryModal(false)}
+                className="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Success Feedback Screen */}
             {manualSuccessMessage ? (
-              <div className="p-8 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center ring-8 ring-emerald-500/10">
+              <div className="py-8 text-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center animate-bounce">
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
-                <h4 className="text-xl font-bold text-on-surface">
-                  {isPt ? 'Apontamento Registrado!' : '¡Registro Guardado!'}
+                <h4 className="text-lg font-bold text-on-surface">
+                  {isPt ? 'Apontamento Gravado com Sucesso!' : '¡Registro Guardado con Éxito!'}
                 </h4>
-                <p className="text-sm text-on-surface-variant max-w-sm">
+                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold max-w-sm mx-auto">
                   {manualSuccessMessage}
                 </p>
-                <span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-950/20 px-3 py-1 rounded-full border border-emerald-500/30">
-                  HASH: sha256_bpa_verified • SENAVE/GLOBALG.A.P.
-                </span>
               </div>
             ) : (
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-sm flex-1">
-                {/* 1. Seleção de Estufa e Lote */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface mb-1">
-                      {isPt ? 'Estufa Inspecionada' : 'Invernadero Inspeccionado'}
-                    </label>
-                    <select
-                      value={manualZoneId}
-                      onChange={(e) => setManualZoneId(e.target.value)}
-                      className="w-full bg-surface-container border border-outline-variant/50 rounded-xl px-3 py-2 text-xs font-semibold text-on-surface focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                    >
-                      {zones.map((z) => (
-                        <option key={z.id} value={z.id}>
-                          {z.name} ({z.cultivar})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface mb-1">
-                      {isPt ? 'Tipo de Apontamento' : 'Tipo de Apunte'}
-                    </label>
-                    <select
-                      value={manualTemplateType}
-                      onChange={(e) => setManualTemplateType(e.target.value as any)}
-                      className="w-full bg-surface-container border border-outline-variant/50 rounded-xl px-3 py-2 text-xs font-semibold text-on-surface focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="ph_ec_manual">{isPt ? '🧪 pH & Condutividade (Calda)' : '🧪 pH y Conductividad'}</option>
-                      <option value="turno_diario">{isPt ? '📋 Turno Diário de Manejo' : '📋 Turno Diario de Manejo'}</option>
-                      <option value="fitossanidade">{isPt ? '🔬 Inspeção Fitossanitária' : '🔬 Inspección Fitosanitaria'}</option>
-                      <option value="higiene_estufa">{isPt ? '🧼 Limpeza & Calibração' : '🧼 Limpieza y Calibración'}</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* 2. Medições Instrumentais Manuais (pH, EC, Temp, Umidade) */}
-                <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-600/30 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
-                      <Sliders className="w-3.5 h-3.5" />
-                      {isPt ? 'Medições Instrumentais Portáteis' : 'Mediciones con Instrumentos Portátiles'}
-                    </span>
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono bg-emerald-900/30 px-2 py-0.5 rounded">
-                      BPA-PY
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* pH Manual */}
-                    <div className="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-on-surface">pH da Calda</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                          parseFloat(manualPh) >= 5.8 && parseFloat(manualPh) <= 6.5
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                        }`}>
-                          {parseFloat(manualPh) >= 5.8 && parseFloat(manualPh) <= 6.5 ? 'Ideal' : 'Ajustar'}
-                        </span>
-                      </div>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="4.0"
-                        max="8.5"
-                        value={manualPh}
-                        onChange={(e) => setManualPh(e.target.value)}
-                        className="w-full text-lg font-bold text-primary bg-surface-container-high rounded-lg px-2.5 py-1 text-center focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <div className="flex justify-between gap-1 mt-1.5">
-                        {['5.8', '6.0', '6.2', '6.5'].map((val) => (
-                          <button
-                            key={val}
-                            type="button"
-                            onClick={() => setManualPh(val)}
-                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-surface-container hover:bg-emerald-100 dark:hover:bg-emerald-950 text-on-surface cursor-pointer"
-                          >
-                            {val}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* EC Manual */}
-                    <div className="bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-on-surface">EC (mS/cm)</span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                          parseFloat(manualEc) >= 1.8 && parseFloat(manualEc) <= 2.5
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
-                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
-                        }`}>
-                          {parseFloat(manualEc) >= 1.8 && parseFloat(manualEc) <= 2.5 ? 'Ideal' : 'Ajustar'}
-                        </span>
-                      </div>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0.5"
-                        max="4.0"
-                        value={manualEc}
-                        onChange={(e) => setManualEc(e.target.value)}
-                        className="w-full text-lg font-bold text-secondary bg-surface-container-high rounded-lg px-2.5 py-1 text-center focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <div className="flex justify-between gap-1 mt-1.5">
-                        {['1.8', '2.0', '2.2', '2.4'].map((val) => (
-                          <button
-                            key={val}
-                            type="button"
-                            onClick={() => setManualEc(val)}
-                            className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-surface-container hover:bg-emerald-100 dark:hover:bg-emerald-950 text-on-surface cursor-pointer"
-                          >
-                            {val}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant mb-1">
-                        🌡️ {isPt ? 'Temperatura Calda/Estufa (°C)' : 'Temperatura Solución (°C)'}
-                      </label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={manualTemp}
-                        onChange={(e) => setManualTemp(e.target.value)}
-                        className="w-full text-sm font-semibold bg-surface-container border border-outline-variant/40 rounded-lg px-2.5 py-1.5 text-on-surface"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-on-surface-variant mb-1">
-                        💧 {isPt ? 'Umidade Relativa do Ar (%)' : 'Humedad Relativa (%)'}
-                      </label>
-                      <input
-                        type="number"
-                        step="1"
-                        value={manualHumidity}
-                        onChange={(e) => setManualHumidity(e.target.value)}
-                        className="w-full text-sm font-semibold bg-surface-container border border-outline-variant/40 rounded-lg px-2.5 py-1.5 text-on-surface"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Notas Agronômicas & Manejo */}
+              <div className="py-4 space-y-4">
+                {/* Tipo de Registro */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-on-surface">
-                      {isPt ? 'Observações Agronômicas & Manejo' : 'Observaciones Agronómicas y Manejo'}
-                    </label>
-                    <span className="text-[10px] text-on-surface-variant">{isPt ? 'Registro técnico' : 'Libro de campo'}</span>
-                  </div>
-                  <textarea
-                    rows={3}
-                    value={manualFindings}
-                    onChange={(e) => setManualFindings(e.target.value)}
-                    placeholder={isPt
-                      ? 'Ex: Verificada uniformidade dos gotejadores nas bancadas centrais; cortinas laterais reguladas; sem presença de oídio.'
-                      : 'Ej: Verificada uniformidad de goteros; cortinas laterales reguladas a 40cm; sin síntomas de oídio.'}
-                    className="w-full bg-surface-container border border-outline-variant/50 rounded-xl p-2.5 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                  />
-                  {/* Quick Preset Tags */}
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {[
-                      isPt ? '✅ Nutrição equilibrada' : '✅ Nutrición equilibrada',
-                      isPt ? '💨 Cortinas reguladas' : '💨 Cortinas reguladas',
-                      isPt ? '🔍 Amostragem foliar ok' : '🔍 Muestreo foliar ok',
-                      isPt ? '🚿 Gotejadores limpos' : '🚿 Goteros limpios'
-                    ].map((tag, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setManualFindings((prev) => (prev ? `${prev}. ${tag}` : tag))}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container hover:bg-emerald-100 dark:hover:bg-emerald-950 text-on-surface-variant cursor-pointer border border-outline-variant/30"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 4. Ação Corretiva Realizada (Opcional) */}
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1">
-                    {isPt ? 'Ação Corretiva / Intervenção Realizada' : 'Acción Correctiva / Intervención Realizada'}
+                  <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                    {isPt ? 'Tipo de Lançamento Técnico:' : 'Tipo de Carga Técnica:'}
                   </label>
-                  <input
-                    type="text"
-                    value={manualCorrectiveAction}
-                    onChange={(e) => setManualCorrectiveAction(e.target.value)}
-                    placeholder={isPt ? 'Ex: Calibrado injetor de ácido fosfórico para baixar pH em 0.2' : 'Ej: Calibrado inyector de nutrientes para ajustar pH'}
-                    className="w-full bg-surface-container border border-outline-variant/50 rounded-xl px-3 py-2 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                {/* 5. Nível de Severidade / Status */}
-                <div>
-                  <label className="block text-xs font-bold text-on-surface mb-1.5">
-                    {isPt ? 'Status do Setor Avaliado' : 'Estado del Sector'}
-                  </label>
-                  <div className="grid grid-cols-4 gap-1.5 text-center">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
-                      { val: 'normal', label: isPt ? 'Normal' : 'Normal', color: 'border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40' },
-                      { val: 'leve', label: isPt ? 'Leve' : 'Leve', color: 'border-teal-500 text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/40' },
-                      { val: 'moderada', label: isPt ? 'Atenção' : 'Atención', color: 'border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40' },
-                      { val: 'critica', label: isPt ? 'Crítico' : 'Crítico', color: 'border-rose-500 text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40' }
+                      { id: 'ph_ec_manual', label: isPt ? '🧪 pH & EC da Calda' : '🧪 pH y EC de Solución' },
+                      { id: 'turno_diario', label: isPt ? '📋 Turno de Manejo' : '📋 Turno de Manejo' },
+                      { id: 'fitossanidade', label: isPt ? '🔍 Inspeção Fitossanitária' : '🔍 Inspección Fitosanitaria' },
+                      { id: 'higiene_estufa', label: isPt ? '🧼 Limpeza & Calibração' : '🧼 Limpieza y Calibración' }
                     ].map((item) => (
                       <button
-                        key={item.val}
+                        key={item.id}
                         type="button"
-                        onClick={() => setManualSeverity(item.val as any)}
-                        className={`py-2 px-1 rounded-xl text-xs font-bold border-2 transition-all cursor-pointer ${
-                          manualSeverity === item.val
-                            ? `${item.color} shadow-xs ring-1 ring-current`
-                            : 'border-outline-variant/30 text-on-surface-variant bg-surface-container hover:bg-surface-container-high'
+                        onClick={() => setManualTemplateType(item.id as any)}
+                        className={`p-2 rounded-xl text-left font-semibold border transition-all cursor-pointer ${
+                          manualTemplateType === item.id
+                            ? 'bg-emerald-800 text-white border-emerald-600 shadow-xs'
+                            : 'bg-surface-container-high hover:bg-surface-container text-on-surface border-transparent'
                         }`}
                       >
                         {item.label}
@@ -926,17 +1009,102 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   </div>
                 </div>
 
-                {/* Submit Action Button */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveManualEntry}
-                    className="w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold text-sm shadow-lg active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>{isPt ? 'Gravar Apontamento Oficial no Sistema' : 'Guardar Apunte Oficial en el Sistema'}</span>
-                  </button>
+                {/* Medições Numéricas de pH e EC */}
+                <div className="grid grid-cols-2 gap-3 bg-surface-container-high/60 p-3 rounded-2xl border border-outline-variant/30">
+                  {/* pH Input */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-on-surface">pH da Calda</label>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                        {targets.phMin} - {targets.phMax}
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="4.0"
+                      max="9.0"
+                      value={manualPh}
+                      onChange={(e) => setManualPh(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-base font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    />
+                  </div>
+
+                  {/* EC Input */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-on-surface">EC (mS/cm)</label>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                        {targets.ecMin} - {targets.ecMax}
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.5"
+                      max="5.0"
+                      value={manualEc}
+                      onChange={(e) => setManualEc(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-base font-bold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    />
+                  </div>
                 </div>
+
+                {/* Temperatura e Umidade */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-on-surface-variant block mb-1">
+                      {isPt ? 'Temperatura (°C):' : 'Temperatura (°C):'}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={manualTemp}
+                      onChange={(e) => setManualTemp(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-on-surface-variant block mb-1">
+                      {isPt ? 'Umidade do Ar (%):' : 'Humedad (%):'}
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={manualHumidity}
+                      onChange={(e) => setManualHumidity(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Observações Agronômicas & Tags Rápidas */}
+                <div>
+                  <label className="text-xs font-bold text-on-surface-variant block mb-1">
+                    {isPt ? 'Observações do Técnico de Campo:' : 'Observaciones Técnicas:'}
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={manualFindings}
+                    onChange={(e) => setManualFindings(e.target.value)}
+                    placeholder={
+                      isPt
+                        ? 'Ex: Nutrição equilibrada, cortinas reguladas, sem presença de pragas...'
+                        : 'Ej: Nutrición equilibrada, cortinas abiertas, sin plagas observadas...'
+                    }
+                    className="w-full p-2.5 rounded-xl bg-surface border border-outline-variant/50 text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600 resize-none"
+                  />
+                </div>
+
+                {/* Botão de Envio */}
+                <button
+                  type="button"
+                  onClick={handleSaveManualEntry}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>{isPt ? 'Gravar Apontamento na Linha do Tempo' : 'Guardar Apunte en la Línea de Tiempo'}</span>
+                </button>
               </div>
             )}
           </div>

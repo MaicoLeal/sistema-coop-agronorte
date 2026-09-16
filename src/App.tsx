@@ -231,6 +231,7 @@ export default function App() {
                 setViewMode('expert_management');
                 setActiveTab('inspections');
               }}
+              onOpenPublicTrace={handleOpenPublicTrace}
               onHarvestSaved={refreshData}
               onInspectionSaved={refreshData}
               onSelectZone={setSelectedZoneId}

@@ -333,3 +333,26 @@ export interface FertigationLog {
   operatorId: string;
   observations?: string;
 }
+
+// === LINHA DO TEMPO UNIFICADA & CERTIFICAÇÃO DE RASTREABILIDADE ===
+
+export interface UnifiedIntervention {
+  id: string;
+  batchId: string;
+  zoneId: string;
+  timestamp: string;
+  type: 'nutricao' | 'manejo' | 'fitossanidade' | 'sensor_leitura' | 'colheita';
+  title: string;
+  productOrAction: string;
+  dosage?: string;
+  gracePeriodDays?: number;
+  ph?: number;
+  ec?: number;
+  temperature?: number;
+  humidity?: number;
+  operatorName: string;
+  operatorRole?: string;
+  severity?: 'normal' | 'leve' | 'moderada' | 'atencao' | 'critica';
+  notes?: string;
+  verifiedHash: string;
+}

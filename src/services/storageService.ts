@@ -13,7 +13,8 @@ import {
   InputMovement,
   NutrientRecipe,
   FertigationLog,
-  UserProfile
+  UserProfile,
+  UnifiedIntervention
 } from '../types';
 import {
   INITIAL_BATCHES,
@@ -30,6 +31,7 @@ import {
   INITIAL_INPUT_MOVEMENTS,
   INITIAL_RECIPES,
   INITIAL_FERTIGATION_LOGS,
+  INITIAL_INTERVENTIONS,
   SEED_TENANT
 } from '../data/seedData';
 
@@ -48,7 +50,8 @@ const STORAGE_KEYS = {
   INPUT_ITEMS: 'agronorte_input_items_v2',
   INPUT_MOVEMENTS: 'agronorte_input_movements_v2',
   RECIPES: 'agronorte_recipes_v2',
-  FERTIGATION_LOGS: 'agronorte_fertigation_logs_v2'
+  FERTIGATION_LOGS: 'agronorte_fertigation_logs_v2',
+  INTERVENTIONS: 'agronorte_interventions_v2'
 };
 
 function getLocal<T>(key: string, fallback: T): T {
@@ -347,6 +350,40 @@ export class StorageService {
     return { success: true, message: `Lote ${batch.batchCode} atualizado com sucesso.` };
   }
 
+  // === UNIFIED INTERVENTIONS & BATCH LIFECYCLE ===
+
+  static getInterventions(): UnifiedIntervention[] {
+    return getLocal<UnifiedIntervention[]>(STORAGE_KEYS.INTERVENTIONS, INITIAL_INTERVENTIONS);
+  }
+
+  static saveInterventions(interventions: UnifiedIntervention[]): void {
+    setLocal(STORAGE_KEYS.INTERVENTIONS, interventions);
+  }
+
+  static addIntervention(intervention: UnifiedIntervention, user?: UserProfile): void {
+    const list = this.getInterventions();
+    const updated = [intervention, ...list];
+    this.saveInterventions(updated);
+
+    if (user) {
+      this.appendAudit(
+        user.email || 'tecnico@agronorte.com.py',
+        user.role || 'field_operator',
+        'BATCH_INTERVENTION_RECORDED',
+        'UnifiedIntervention',
+        intervention.id,
+        `${intervention.type.toUpperCase()}: ${intervention.title} (${intervention.productOrAction}) por ${intervention.operatorName}`
+      );
+    }
+  }
+
+  static getBatchInterventions(batchId: string, zoneId?: string): UnifiedIntervention[] {
+    const all = this.getInterventions();
+    const filtered = all.filter(i => i.batchId === batchId || (zoneId && i.zoneId === zoneId));
+    // Sort chronological: oldest to newest for lifecycle view, or newest first
+    return filtered.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  }
+
   // Reset demo state
   static resetToSeed(): void {
     localStorage.removeItem(STORAGE_KEYS.BATCHES);
@@ -364,5 +401,6 @@ export class StorageService {
     localStorage.removeItem(STORAGE_KEYS.INPUT_MOVEMENTS);
     localStorage.removeItem(STORAGE_KEYS.RECIPES);
     localStorage.removeItem(STORAGE_KEYS.FERTIGATION_LOGS);
+    localStorage.removeItem(STORAGE_KEYS.INTERVENTIONS);
   }
 }
