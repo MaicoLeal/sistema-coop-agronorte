@@ -193,15 +193,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-emerald-400 shrink-0 bg-emerald-950">
                   <img
                     src="/assets/don-mateo/don-mateo-idle.jpg"
-                    alt="Don Mateo 3D"
+                    alt="Don Mateo"
                     className="w-full h-full object-cover scale-110"
                   />
                 </div>
-                <span>Don Mateo (IA 3D)</span>
+                <span>Don Mateo (Consultor)</span>
               </div>
               <span className="text-[10px] font-mono bg-emerald-800/80 text-emerald-200 px-1.5 py-0.5 rounded border border-emerald-600/40 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                3D
+                Voz
               </span>
             </button>
           </div>

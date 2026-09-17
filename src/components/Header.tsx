@@ -131,17 +131,17 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenMateoChat}
             className="flex items-center gap-2 bg-emerald-950/70 hover:bg-emerald-850 text-emerald-100 pl-1.5 pr-3 py-1 rounded-full text-xs font-bold border border-emerald-600/40 hover:border-emerald-400 transition-all cursor-pointer shadow-xs group"
-            title="Conversar com Don Mateo (Assistente 3D)"
+            title={lang === 'pt-BR' ? 'Conversar com Don Mateo (Consultor Agronorte)' : 'Conversar con Don Mateo (Asesor Agronorte)'}
           >
             <div className="w-5 h-5 rounded-full overflow-hidden ring-1 ring-emerald-400/80 shrink-0 bg-emerald-950">
               <img
                 src="/assets/don-mateo/don-mateo-idle.jpg"
-                alt="Don Mateo 3D"
+                alt="Don Mateo"
                 className="w-full h-full object-cover scale-110"
               />
             </div>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Don Mateo 3D</span>
+            <span>Don Mateo</span>
           </button>
         )}
 

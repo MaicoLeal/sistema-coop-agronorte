@@ -81,8 +81,8 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
   // Initialize welcoming message
   useEffect(() => {
     const initialGreeting = isPt
-      ? 'Olá, companheiro! Sou o Don Mateo, seu assistente técnico aqui da Coop Agronorte. Estou de olho nas suas estufas e pronto para te ajudar. O que você gostaria de saber ou fazer agora?'
-      : '¡Hola, amigo productor! Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?';
+      ? 'Olá, parceiro produtor! Sou o Don Mateo, seu consultor agronômico aqui da Cooperativa Agronorte. Acompanho suas estufas de tomate e pimentão de perto. Como posso te orientar no manejo hoje?'
+      : '¡Hola, amigo productor! Soy Don Mateo, tu asesor agronómico de la Cooperativa Agronorte. Acompaño tus invernaderos de tomate y locote de cerca. ¿En qué te puedo orientar hoy con tu cultivo?';
 
     setMessages([
       {
@@ -260,7 +260,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Don Mateo (Assistente 3D)
+                  Don Mateo (Consultor Agronorte)
                 </span>
                 <button
                   onClick={(e) => {
@@ -274,8 +274,8 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               </div>
               <p className="text-xs text-on-surface leading-snug font-medium">
                 {isPt
-                  ? 'Olá, amigo produtor! Estufas monitoradas em tempo real. Toque aqui para tirar dúvidas com voz ou texto!'
-                  : '¡Hola amigo! Invernaderos activos en tiempo real. ¡Tócame aquí para cualquier consulta!'}
+                  ? 'Olá, parceiro produtor! Nossas estufas estão monitoradas em tempo real. Toque aqui para conversar comigo por voz ou texto!'
+                  : '¡Hola, amigo productor! Invernaderos activos en tiempo real. ¡Tócame aquí para cualquier consulta por voz o texto!'}
               </p>
               <div className="absolute -bottom-2 right-8 w-4 h-4 bg-surface-container-lowest border-r-2 border-b-2 border-emerald-500/40 rotate-45" />
             </div>
@@ -290,8 +290,8 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               setHasProactiveTip(false);
               speakText(
                 isPt
-                  ? 'Olá companheiro! Sou o Don Mateo, seu assistente técnico em 3D. Como posso te ajudar hoje?'
-                  : '¡Hola amigo! Soy Don Mateo, tu asistente técnico en 3D. ¿En qué te puedo ayudar hoy?'
+                  ? 'Olá, parceiro produtor! Sou o Don Mateo, seu consultor agronômico aqui da Cooperativa Agronorte. Nossas estufas estão monitoradas em tempo real. Como posso te orientar no manejo hoje?'
+                  : '¡Hola, amigo productor! Soy Don Mateo, tu asesor agronómico de la Cooperativa Agronorte. Nuestros invernaderos están monitoreados en tiempo real. ¿En qué te puedo orientar hoy con tu cultivo?'
               );
             }}
             className="cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-hidden bg-transparent border-0 p-0"
@@ -320,7 +320,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold leading-tight">Don Mateo</h3>
                     <span className="bg-emerald-600/50 text-emerald-200 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-400/30">
-                      {isPt ? 'Eng. Agrônomo 3D' : 'Ing. Agrónomo 3D'}
+                      {isPt ? 'Consultor Agronômico' : 'Asesor Agronómico'}
                     </span>
                   </div>
                   <p className="text-[11px] text-emerald-200/80 mt-0.5 flex items-center gap-1.5">
@@ -331,7 +331,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
                       ? isPt ? 'Ouvindo sua voz...' : 'Escuchando tu voz...'
                       : avatarState === 'thinking'
                       ? isPt ? 'Analisando estufas e dados...' : 'Analizando tu consulta...'
-                      : isPt ? 'Assistente 3D pronto' : 'Asistente 3D listo'}
+                      : isPt ? 'Consultor pronto para orientar' : 'Asesor listo para orientar'}
                   </p>
                 </div>
               </div>
@@ -397,7 +397,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
                     />
                     <div className="mt-3.5 flex items-center gap-2 text-[11px] text-emerald-400/80">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>{isPt ? 'Mova o mouse para explorar a perspectiva 3D do Don Mateo' : 'Mueve el cursor para explorar perspectiva 3D'}</span>
+                      <span>{isPt ? 'Mova o cursor para interagir com o Don Mateo' : 'Mueve el cursor para interactuar con Don Mateo'}</span>
                     </div>
                   </div>
                 ) : (
