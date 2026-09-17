@@ -20,7 +20,8 @@ import {
   Sparkles,
   AlertOctagon,
   ArrowRight,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 
 interface HarvestAndPackingProps {
@@ -258,7 +259,22 @@ export const HarvestAndPacking: React.FC<HarvestAndPackingProps> = ({
 
                 <div className="text-[11px] text-on-surface-variant flex items-center justify-between pt-1">
                   <span>Operador: {h.operatorId}</span>
-                  <span>Data: {new Date(h.harvestedAt).toLocaleString('es-PY', { timeZone: 'America/Asuncion' })}</span>
+                  <div className="flex items-center gap-3">
+                    <span>Data: {new Date(h.harvestedAt).toLocaleString('es-PY', { timeZone: 'America/Asuncion' })}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`¿Está seguro de eliminar la cosecha ${h.harvestCode}?`)) {
+                          StorageService.deleteHarvest(h.id, currentUser);
+                          onRefreshData();
+                        }
+                      }}
+                      title="Eliminar lote de cosecha"
+                      className="p-1 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

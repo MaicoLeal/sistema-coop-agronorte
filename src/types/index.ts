@@ -195,7 +195,7 @@ export interface AIDiagnosisResult {
 export interface FieldInspection {
   id: string;
   tenantId: string;
-  templateType: 'turno_diario' | 'ph_ec_manual' | 'fitossanidade' | 'higiene_estufa' | 'recebimento_insumo';
+  templateType: 'turno_diario' | 'ph_ec_manual' | 'fitossanidade' | 'higiene_estufa' | 'recebimento_insumo' | 'poda_manejo';
   zoneId: string;
   batchId?: string;
   inspectorName: string;
@@ -355,4 +355,11 @@ export interface UnifiedIntervention {
   severity?: 'normal' | 'leve' | 'moderada' | 'atencao' | 'critica';
   notes?: string;
   verifiedHash: string;
+  volumeLiters?: number;
+  targetPestOrDisease?: string;
+  senaveRegistry?: string;
+  coverageArea?: string;
+  plantsTreated?: number;
+  cropStatus?: string;
 }
+

@@ -106,6 +106,59 @@ export class StorageService {
     setLocal(STORAGE_KEYS.BATCHES, batches);
   }
 
+  static addBatch(batch: PlantBatch, user?: UserProfile): void {
+    const list = this.getBatches();
+    list.unshift(batch);
+    this.saveBatches(list);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'BATCH_CREATED',
+        'PlantBatch',
+        batch.id,
+        `Nuevo lote creado: ${batch.batchCode} (${batch.crop}) en zona ${batch.zoneId}`
+      );
+    }
+  }
+
+  static updateBatch(updated: PlantBatch, user?: UserProfile): void {
+    const list = this.getBatches();
+    const index = list.findIndex(b => b.id === updated.id);
+    if (index !== -1) {
+      list[index] = updated;
+      this.saveBatches(list);
+      if (user) {
+        this.appendAudit(
+          user.email || user.id,
+          user.role,
+          'BATCH_UPDATED',
+          'PlantBatch',
+          updated.id,
+          `Lote ${updated.batchCode} actualizado (${updated.status})`
+        );
+      }
+    }
+  }
+
+  static deleteBatch(id: string, user?: UserProfile): void {
+    const list = this.getBatches();
+    const target = list.find(b => b.id === id);
+    const filtered = list.filter(b => b.id !== id);
+    this.saveBatches(filtered);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'BATCH_DELETED',
+        'PlantBatch',
+        id,
+        `Lote eliminado: ${target ? target.batchCode : id}`
+      );
+    }
+  }
+
+
   static getHarvests(): HarvestRecord[] {
     const list = getLocal<HarvestRecord[]>(STORAGE_KEYS.HARVESTS, INITIAL_HARVESTS);
     if (!Array.isArray(list)) return INITIAL_HARVESTS;
@@ -119,6 +172,59 @@ export class StorageService {
   static saveHarvests(harvests: HarvestRecord[]): void {
     setLocal(STORAGE_KEYS.HARVESTS, harvests);
   }
+
+  static addHarvest(harvest: HarvestRecord, user?: UserProfile): void {
+    const list = this.getHarvests();
+    list.unshift(harvest);
+    this.saveHarvests(list);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'HARVEST_RECORDED',
+        'HarvestRecord',
+        harvest.id,
+        `Cosecha ${harvest.harvestCode} registrada: ${harvest.netWeightKg.toFixed(1)} kg (${harvest.unitsCount} cajas)`
+      );
+    }
+  }
+
+  static updateHarvest(updated: HarvestRecord, user?: UserProfile): void {
+    const list = this.getHarvests();
+    const index = list.findIndex(h => h.id === updated.id);
+    if (index !== -1) {
+      list[index] = updated;
+      this.saveHarvests(list);
+      if (user) {
+        this.appendAudit(
+          user.email || user.id,
+          user.role,
+          'HARVEST_UPDATED',
+          'HarvestRecord',
+          updated.id,
+          `Cosecha ${updated.harvestCode} actualizada: ${updated.netWeightKg.toFixed(1)} kg (${updated.unitsCount} cajas)`
+        );
+      }
+    }
+  }
+
+  static deleteHarvest(id: string, user?: UserProfile): void {
+    const list = this.getHarvests();
+    const target = list.find(h => h.id === id);
+    const filtered = list.filter(h => h.id !== id);
+    this.saveHarvests(filtered);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'HARVEST_DELETED',
+        'HarvestRecord',
+        id,
+        `Cosecha eliminada: ${target ? target.harvestCode : id}`
+      );
+    }
+  }
+
 
   static getPackLots(): PackLot[] {
     const list = getLocal<PackLot[]>(STORAGE_KEYS.PACK_LOTS, INITIAL_PACK_LOTS);
@@ -198,6 +304,42 @@ export class StorageService {
     );
   }
 
+  static updateInspection(updated: FieldInspection, user?: UserProfile): void {
+    const list = this.getInspections();
+    const index = list.findIndex(i => i.id === updated.id);
+    if (index !== -1) {
+      list[index] = updated;
+      this.saveInspections(list);
+      if (user) {
+        this.appendAudit(
+          user.email || user.id,
+          user.role,
+          'update_field_inspection',
+          'FieldInspection',
+          updated.id,
+          `Inspección técnica actualizada en zona ${updated.zoneId}: ${updated.findings}`
+        );
+      }
+    }
+  }
+
+  static deleteInspection(id: string, user?: UserProfile): void {
+    const list = this.getInspections();
+    const filtered = list.filter(i => i.id !== id);
+    this.saveInspections(filtered);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'delete_field_inspection',
+        'FieldInspection',
+        id,
+        `Inspección técnica eliminada (ID: ${id})`
+      );
+    }
+  }
+
+
   static getAuditLog(): AuditEntry[] {
     return getLocal(STORAGE_KEYS.AUDIT, INITIAL_AUDIT_LOG);
   }
@@ -242,6 +384,59 @@ export class StorageService {
   static saveInputItems(items: InputItem[]): void {
     setLocal(STORAGE_KEYS.INPUT_ITEMS, items);
   }
+
+  static addInputItem(item: InputItem, user?: UserProfile): void {
+    const list = this.getInputItems();
+    list.unshift(item);
+    this.saveInputItems(list);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'INPUT_ITEM_CREATED',
+        'InputItem',
+        item.id,
+        `Insumo cadastrado: ${item.name} (${item.tradeName}) - Estoque inicial: ${item.currentStockQty} ${item.unit}`
+      );
+    }
+  }
+
+  static updateInputItem(updated: InputItem, user?: UserProfile): void {
+    const list = this.getInputItems();
+    const index = list.findIndex(i => i.id === updated.id);
+    if (index !== -1) {
+      list[index] = updated;
+      this.saveInputItems(list);
+      if (user) {
+        this.appendAudit(
+          user.email || user.id,
+          user.role,
+          'INPUT_ITEM_UPDATED',
+          'InputItem',
+          updated.id,
+          `Insumo atualizado: ${updated.name} (${updated.tradeName})`
+        );
+      }
+    }
+  }
+
+  static deleteInputItem(id: string, user?: UserProfile): void {
+    const list = this.getInputItems();
+    const target = list.find(i => i.id === id);
+    const filtered = list.filter(i => i.id !== id);
+    this.saveInputItems(filtered);
+    if (user) {
+      this.appendAudit(
+        user.email || user.id,
+        user.role,
+        'INPUT_ITEM_DELETED',
+        'InputItem',
+        id,
+        `Insumo removido: ${target ? target.name : id}`
+      );
+    }
+  }
+
 
   static getInputMovements(): InputMovement[] {
     return getLocal(STORAGE_KEYS.INPUT_MOVEMENTS, INITIAL_INPUT_MOVEMENTS);
@@ -376,6 +571,43 @@ export class StorageService {
       );
     }
   }
+
+  static updateIntervention(updated: UnifiedIntervention, user?: UserProfile): void {
+    const list = this.getInterventions();
+    const index = list.findIndex(i => i.id === updated.id);
+    if (index !== -1) {
+      list[index] = updated;
+      this.saveInterventions(list);
+      if (user) {
+        this.appendAudit(
+          user.email || 'tecnico@agronorte.com.py',
+          user.role || 'field_operator',
+          'BATCH_INTERVENTION_UPDATED',
+          'UnifiedIntervention',
+          updated.id,
+          `EDICIÓN: ${updated.type.toUpperCase()} - ${updated.title} (${updated.productOrAction}) por ${user.name || updated.operatorName}`
+        );
+      }
+    }
+  }
+
+  static deleteIntervention(id: string, user?: UserProfile): void {
+    const list = this.getInterventions();
+    const target = list.find(i => i.id === id);
+    const filtered = list.filter(i => i.id !== id);
+    this.saveInterventions(filtered);
+    if (user) {
+      this.appendAudit(
+        user.email || 'tecnico@agronorte.com.py',
+        user.role || 'field_operator',
+        'BATCH_INTERVENTION_DELETED',
+        'UnifiedIntervention',
+        id,
+        `ELIMINACIÓN: Apunte técnico eliminado: ${target ? target.title : id} (${target ? target.productOrAction : ''})`
+      );
+    }
+  }
+
 
   static getBatchInterventions(batchId: string, zoneId?: string): UnifiedIntervention[] {
     const all = this.getInterventions();

@@ -19,7 +19,8 @@ import {
   Video,
   FileAudio,
   Languages,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 
 interface FieldInspectionsProps {
@@ -389,6 +390,20 @@ export const FieldInspections: React.FC<FieldInspectionsProps> = ({
                     )}
                     <span>{insp.syncStatus === 'synced' ? 'Sincronizado' : 'Offline / Pendente'}</span>
                   </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('¿Está seguro de eliminar esta inspección del registro?')) {
+                        StorageService.deleteInspection(insp.id, currentUser);
+                        onRefreshData();
+                      }
+                    }}
+                    title="Eliminar inspección"
+                    className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
