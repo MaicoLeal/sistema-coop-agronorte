@@ -132,6 +132,23 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
   // Certificate Modal State
   const [showCertificateModal, setShowCertificateModal] = useState<boolean>(false);
 
+  // History Modal State (oculta el historial de la pantalla principal y lo abre en modal)
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+
+  // Sincronizar apertura de historial si la pestaña activa móvil es 'historial'
+  React.useEffect(() => {
+    if (activeMobileTab === 'historial') {
+      setShowHistoryModal(true);
+    }
+  }, [activeMobileTab]);
+
+  const handleCloseHistoryModal = () => {
+    setShowHistoryModal(false);
+    if (currentTab === 'historial') {
+      handleTabSwitch('inicio');
+    }
+  };
+
   // Timeline Filter State
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'nutricao' | 'manejo' | 'fitossanidade' | 'colheita'>('all');
 
@@ -678,10 +695,10 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
             </button>
 
-            {/* 2. Ver historial */}
+            {/* 2. Botón Historial de la planta (Abre modal con toda la información sin exponerla en la pantalla principal) */}
             <button
               type="button"
-              onClick={() => handleTabSwitch('historial')}
+              onClick={() => setShowHistoryModal(true)}
               className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
             >
               <div className="flex items-center gap-3">
@@ -690,10 +707,10 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
-                    Ver historial
+                    Historial de la planta
                   </h4>
                   <p className="text-[11px] text-on-surface-variant">
-                    {interventions.length} pasos registrados
+                    {interventions.length} pasos registrados • Tocar para abrir
                   </p>
                 </div>
               </div>
@@ -969,27 +986,47 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         </div>
       </div>
 
-      {/* --- PESTAÑA: HISTORIAL (Requisito 7: Historial de la planta) --- */}
-      <div className={`${currentTab === 'historial' ? 'block' : 'hidden md:block'} space-y-3`}>
-        <div className="bg-surface-container-lowest rounded-3xl p-4 sm:p-6 shadow-sm border border-outline-variant/30">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 border-b border-outline-variant/30">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black text-on-surface flex items-center gap-1.5">
-                  <span>📜</span>
-                  <span>Historial de la planta</span>
-                </h3>
-                <span className="text-[11px] bg-primary-container text-on-primary-container font-mono font-bold px-2 py-0.5 rounded-full">
-                  {filteredInterventions.length} pasos registrados
-                </span>
+      {/* =========================================================
+          5. MODALES (Historial completo, Certificado, Cosecha rápida, Apunte técnico)
+         ========================================================= */}
+
+      {/* 📜 MODAL DEDICADO: HISTORIAL DE LA PLANTA (Toda la información contenida dentro de este modal) */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface-container-lowest rounded-3xl shadow-2xl border-2 border-primary/30 w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header del Modal */}
+            <div className="p-4 sm:p-5 border-b border-outline-variant/30 flex items-center justify-between bg-surface-container-low/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shadow-xs">
+                  <History className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-on-surface">
+                      Historial de la planta
+                    </h3>
+                    <span className="text-[11px] bg-primary text-on-primary font-mono font-bold px-2 py-0.5 rounded-full">
+                      {filteredInterventions.length} pasos
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant">
+                    {currentZone.name} • Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                Manejos auditados con trazabilidad y buenas prácticas
-              </p>
+
+              <button
+                type="button"
+                onClick={handleCloseHistoryModal}
+                className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors"
+                aria-label="Cerrar Historial"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Chips Horizontales de Filtros (Requisito 7) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {/* Chips Horizontales de Filtro */}
+            <div className="px-4 sm:px-5 py-2.5 border-b border-outline-variant/20 bg-surface-container-lowest flex items-center gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
               {[
                 { id: 'all', label: 'Todos' },
                 { id: 'nutricao', label: 'Nutrición' },
@@ -1000,7 +1037,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setTimelineFilter(tab.id as any)}
-                  className={`min-h-[36px] px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
+                  className={`min-h-[36px] px-3 py-1 rounded-xl font-bold text-xs whitespace-nowrap transition-all cursor-pointer ${
                     timelineFilter === tab.id
                       ? 'bg-primary text-on-primary shadow-xs'
                       : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -1010,109 +1047,115 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Lista de Eventos Compactos */}
-          <div className="space-y-2.5 pt-3">
-            {filteredInterventions.map((item) => {
-              const d = new Date(item.timestamp);
-              const dateStr = d.toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'es-PY');
-              const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const isExpanded = expandedHistoryId === item.id;
+            {/* Lista de Eventos con scroll */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-2.5 flex-1">
+              {filteredInterventions.map((item) => {
+                const d = new Date(item.timestamp);
+                const dateStr = d.toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'es-PY');
+                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isExpanded = expandedHistoryId === item.id;
 
-              const typeConfig = {
-                nutricao: { icon: Droplets, color: 'bg-blue-600', text: 'text-blue-700 dark:text-blue-400', badge: 'Nutrición' },
-                manejo: { icon: Sprout, color: 'bg-emerald-600', text: 'text-emerald-700 dark:text-emerald-400', badge: 'Manejo' },
-                fitossanidade: { icon: ShieldCheck, color: 'bg-amber-600', text: 'text-amber-700 dark:text-amber-400', badge: 'Sanidad' },
-                sensor_leitura: { icon: Activity, color: 'bg-purple-600', text: 'text-purple-700 dark:text-purple-400', badge: 'Calibración' },
-                colheita: { icon: Package, color: 'bg-rose-600', text: 'text-rose-700 dark:text-rose-400', badge: 'Cosecha' }
-              }[item.type] || { icon: CheckCircle2, color: 'bg-slate-600', text: 'text-slate-700', badge: item.type };
+                const typeConfig = {
+                  nutricao: { icon: Droplets, color: 'bg-blue-600', text: 'text-blue-700 dark:text-blue-400', badge: 'Nutrición' },
+                  manejo: { icon: Sprout, color: 'bg-emerald-600', text: 'text-emerald-700 dark:text-emerald-400', badge: 'Manejo' },
+                  fitossanidade: { icon: ShieldCheck, color: 'bg-amber-600', text: 'text-amber-700 dark:text-amber-400', badge: 'Sanidad' },
+                  sensor_leitura: { icon: Activity, color: 'bg-purple-600', text: 'text-purple-700 dark:text-purple-400', badge: 'Calibración' },
+                  colheita: { icon: Package, color: 'bg-rose-600', text: 'text-rose-700 dark:text-rose-400', badge: 'Cosecha' }
+                }[item.type] || { icon: CheckCircle2, color: 'bg-slate-600', text: 'text-slate-700', badge: item.type };
 
-              const Icon = typeConfig.icon;
+                const Icon = typeConfig.icon;
 
-              return (
-                <div
-                  key={item.id}
-                  className="bg-surface-container-high/60 hover:bg-surface-container-high rounded-2xl p-3 sm:p-3.5 border border-outline-variant/20 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2.5 min-w-0">
-                      <div className={`w-7 h-7 rounded-lg ${typeConfig.color} text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs`}>
-                        <Icon className="w-4 h-4" />
+                return (
+                  <div
+                    key={item.id}
+                    className="bg-surface-container-high/60 hover:bg-surface-container-high rounded-2xl p-3 sm:p-3.5 border border-outline-variant/20 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className={`w-7 h-7 rounded-lg ${typeConfig.color} text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-white/80 dark:bg-black/40 ${typeConfig.text}`}>
+                              {typeConfig.badge}
+                            </span>
+                            <span className="text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {dateStr} • {timeStr}
+                            </span>
+                          </div>
+                          <h4 className="text-xs sm:text-sm font-bold text-on-surface mt-0.5 truncate">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-on-surface-variant truncate mt-0.5">
+                            <span className="font-semibold text-primary">{item.productOrAction}</span>
+                            {item.dosage && <span> ({item.dosage})</span>}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-white/80 dark:bg-black/40 ${typeConfig.text}`}>
-                            {typeConfig.badge}
-                          </span>
-                          <span className="text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {dateStr} • {timeStr}
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedHistoryId(isExpanded ? null : item.id)}
+                        className="min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold text-primary hover:bg-primary-container/40 flex items-center gap-1 shrink-0 cursor-pointer transition-colors"
+                      >
+                        <span>{isExpanded ? 'Ocultar' : 'Ver detalles'}</span>
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-2.5 pt-2.5 border-t border-outline-variant/20 text-xs text-on-surface-variant space-y-2 animate-in fade-in duration-150">
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <User className="w-3.5 h-3.5 text-primary" />
+                          <span className="font-bold text-on-surface">{item.operatorName}</span>
+                          <span className="text-on-surface-variant">({item.operatorRole || 'Responsable'})</span>
+                        </div>
+
+                        {item.notes && (
+                          <p className="text-xs bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/20 italic text-on-surface">
+                            "{item.notes}"
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px] font-mono text-on-surface-variant">
+                          {item.ph !== undefined && <span>pH: {item.ph}</span>}
+                          {item.ec !== undefined && <span>CE: {item.ec} mS/cm</span>}
+                          {item.temperature !== undefined && <span>Temp: {item.temperature}°C</span>}
+                          {item.gracePeriodDays !== undefined && (
+                            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                              {item.gracePeriodDays === 0 ? '✓ Carencia Cero' : `Carencia: ${item.gracePeriodDays}d`}
+                            </span>
+                          )}
+                          <span className="text-outline-variant truncate max-w-[200px]" title={item.verifiedHash}>
+                            Hash: {item.verifiedHash.slice(0, 16)}...
                           </span>
                         </div>
-                        <h4 className="text-xs sm:text-sm font-bold text-on-surface mt-0.5 truncate">
-                          {item.title}
-                        </h4>
-                        {/* Resumen de una línea */}
-                        <p className="text-xs text-on-surface-variant truncate mt-0.5">
-                          <span className="font-semibold text-primary">{item.productOrAction}</span>
-                          {item.dosage && <span> ({item.dosage})</span>}
-                        </p>
                       </div>
-                    </div>
-
-                    {/* Botón Ver detalles */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedHistoryId(isExpanded ? null : item.id)}
-                      className="min-h-[36px] px-2.5 py-1 rounded-xl text-xs font-semibold text-primary hover:bg-primary-container/40 flex items-center gap-1 shrink-0 cursor-pointer transition-colors"
-                    >
-                      <span>{isExpanded ? 'Ocultar' : 'Ver detalles'}</span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
+                    )}
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Detalle Expandido (Notas y Hash Oculto por defecto) */}
-                  {isExpanded && (
-                    <div className="mt-2.5 pt-2.5 border-t border-outline-variant/20 text-xs text-on-surface-variant space-y-2 animate-in fade-in duration-150">
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <User className="w-3.5 h-3.5 text-primary" />
-                        <span className="font-bold text-on-surface">{item.operatorName}</span>
-                        <span className="text-on-surface-variant">({item.operatorRole || 'Responsable'})</span>
-                      </div>
-
-                      {item.notes && (
-                        <p className="text-xs bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/20 italic text-on-surface">
-                          "{item.notes}"
-                        </p>
-                      )}
-
-                      {/* Parámetros técnicos y Hash criptográfico */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px] font-mono text-on-surface-variant">
-                        {item.ph !== undefined && <span>pH: {item.ph}</span>}
-                        {item.ec !== undefined && <span>CE: {item.ec} mS/cm</span>}
-                        {item.temperature !== undefined && <span>Temp: {item.temperature}°C</span>}
-                        {item.gracePeriodDays !== undefined && (
-                          <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                            {item.gracePeriodDays === 0 ? '✓ Carencia Cero' : `Carencia: ${item.gracePeriodDays}d`}
-                          </span>
-                        )}
-                        <span className="text-outline-variant truncate max-w-[200px]" title={item.verifiedHash}>
-                          Hash: {item.verifiedHash.slice(0, 16)}...
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {/* Footer del Modal */}
+            <div className="p-3.5 sm:p-4 border-t border-outline-variant/30 bg-surface-container-low/60 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-on-surface-variant font-mono">
+                Trazabilidad BPA • SENAVE
+              </span>
+              <button
+                type="button"
+                onClick={handleCloseHistoryModal}
+                className="px-4 py-2 bg-primary text-on-primary font-bold text-xs rounded-xl shadow-xs cursor-pointer hover:bg-primary-container hover:text-on-primary-container transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* =========================================================
-          5. MODALES (Certificado, Cosecha rápida, Apunte técnico)
-         ========================================================= */}
+      )}
 
       {/* Modal Certificado Oficial */}
       {showCertificateModal && currentBatch && (
