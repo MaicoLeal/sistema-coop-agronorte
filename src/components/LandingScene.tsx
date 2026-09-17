@@ -42,7 +42,15 @@ const FRAGMENT_SHADER = `
     float aspect = u_imageSize.x / u_imageSize.y;
     float viewportAspect = u_resolution.x / u_resolution.y;
     vec2 visible = vec2(min(1.0, viewportAspect / aspect), min(1.0, aspect / viewportAspect));
-    vec2 uv = (vec2(v_uv.x, 1.0 - v_uv.y) - 0.5) * visible + 0.5;
+
+    // No mobile portrait (viewport vertical), ajusta o ponto focal horizontal para a bandeira do Paraguai (uv.x ~ 0.336)
+    float mobileBlend = 1.0 - smoothstep(0.70, 1.15, viewportAspect);
+    float minX = 0.5 * visible.x;
+    float maxX = 1.0 - 0.5 * visible.x;
+    float targetFocusX = clamp(0.336, minX, maxX);
+    float focusX = mix(0.5, targetFocusX, mobileBlend);
+
+    vec2 uv = (vec2(v_uv.x, 1.0 - v_uv.y) - 0.5) * visible + vec2(focusX, 0.5);
     vec2 displacement = vec2(0.0);
 
     // ─── PARAGUAYAN FLAG WAVING IN THE WIND ───

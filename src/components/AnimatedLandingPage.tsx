@@ -164,8 +164,9 @@ export function AnimatedLandingPage({ onEnter, lang = 'es-PY', onLanguageChange 
         <div className="agronorte-visual__content">
           {/* Location chip */}
           <div className="agronorte-visual__location">
+            <span className="agronorte-visual__flag" aria-hidden="true">🇵🇾</span>
             <span className="agronorte-visual__location-dot" aria-hidden="true" />
-            {content.locationLabel}
+            <span>{content.locationLabel}</span>
           </div>
 
           {/* Eyebrow */}

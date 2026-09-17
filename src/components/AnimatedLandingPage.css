@@ -216,6 +216,13 @@
   opacity: 0;
 }
 
+.agronorte-visual__flag {
+  font-size: 0.88rem;
+  line-height: 1;
+  display: inline-block;
+  margin-right: 2px;
+}
+
 .has-motion .agronorte-visual__location {
   animation: agronorte-slide-up var(--entry-duration) var(--entry-ease) 0.25s forwards;
 }
@@ -616,10 +623,28 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   :where([data-agronorte-visual]) {
-    --scene-focus-x: 62%;
-    --scene-focus-y: 40%;
+    --scene-focus-x: 33.6%;
+    --scene-focus-y: 20%;
+  }
+
+  .agronorte-visual__overlay {
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(7, 30, 25, 0.12) 0%,
+        rgba(7, 30, 25, 0.08) 22%,
+        rgba(7, 30, 25, 0.35) 45%,
+        rgba(7, 30, 25, 0.78) 68%,
+        rgba(7, 30, 25, 0.94) 86%,
+        rgba(7, 30, 25, 0.98) 100%
+      ),
+      linear-gradient(
+        to right,
+        rgba(7, 30, 25, 0.35) 0%,
+        transparent 65%
+      );
   }
 
   .agronorte-visual__content {
@@ -654,7 +679,8 @@
 
 @media (max-width: 420px) {
   :where([data-agronorte-visual]) {
-    --scene-focus-x: 58%;
+    --scene-focus-x: 33.6%;
+    --scene-focus-y: 18%;
   }
 
   .agronorte-visual__brand {
