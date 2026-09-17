@@ -5,7 +5,8 @@ import {
   VoiceAssistantService,
   FEMALE_VOICE_KEYWORDS,
   PT_MALE_KEYWORDS,
-  ES_MALE_KEYWORDS
+  ES_MALE_KEYWORDS,
+  ES_LATAM_LOCALES
 } from '../src/services/voiceAssistantService';
 
 function createMockVoice(name: string, lang: string): SpeechSynthesisVoice {
@@ -26,13 +27,51 @@ test('rejeita vozes femininas conhecidas no filtro de seleção', () => {
     createMockVoice('Microsoft Sabina - Spanish (Mexico)', 'es-MX'),
     createMockVoice('Microsoft Helena - Spanish (Spain)', 'es-ES'),
     createMockVoice('Google español', 'es-ES'),
-    createMockVoice('pt-br-x-afy-network', 'pt-BR')
+    createMockVoice('pt-br-x-afy-network', 'pt-BR'),
+    createMockVoice('es-us-x-sfb-network', 'es-US')
   ];
 
   for (const voice of femaleVoices) {
     const isFemale = FEMALE_VOICE_KEYWORDS.some((kw) => voice.name.toLowerCase().includes(kw));
     assert.ok(isFemale, `A voz ${voice.name} deve ser identificada na lista de exclusão feminina`);
   }
+});
+
+test('prioriza es-419 e vozes em espanhol latino sobre espanhol da Espanha', () => {
+  const candidateVoices = [
+    createMockVoice('Microsoft Jorge - Spanish (Spain)', 'es-ES'),
+    createMockVoice('Microsoft Alonso Online (Natural) - Spanish (United States)', 'es-US'),
+    createMockVoice('Google español latino (es-419)', 'es-419')
+  ];
+
+  const result = VoiceAssistantService.selectMaleVoice('es-419', candidateVoices);
+  assert.ok(result.voice, 'Deve encontrar uma voz');
+  assert.equal(
+    result.voice?.name,
+    'Google español latino (es-419)',
+    'Deve priorizar voz explicitamente es-419'
+  );
+  assert.equal(result.isExplicitMale, true);
+  assert.equal(result.isFemaleFallback, false);
+});
+
+test('prioriza vozes masculinas Google/Natural/Microsoft em espanhol latino', () => {
+  const candidateVoices = [
+    createMockVoice('Microsoft Sabina - Spanish (Mexico)', 'es-MX'), // Feminina descartada
+    createMockVoice('Microsoft Helena - Spanish (Spain)', 'es-ES'), // Feminina descartada
+    createMockVoice('Microsoft Jorge - Spanish (Spain)', 'es-ES'), // Espanha masculino
+    createMockVoice('Google español de Estados Unidos (es-us-x-sfg#male_1)', 'es-US'), // LatAm Google male
+    createMockVoice('Microsoft Carlos Online (Natural) - Spanish (Colombia)', 'es-CO') // LatAm Natural
+  ];
+
+  const result = VoiceAssistantService.selectMaleVoice('es-419', candidateVoices);
+  assert.ok(result.voice, 'Deve selecionar voz');
+  // Ambas as opções LatAm Natural/Google superam Jorge da Espanha
+  const isTopLatam =
+    result.voice?.name === 'Microsoft Carlos Online (Natural) - Spanish (Colombia)' ||
+    result.voice?.name === 'Google español de Estados Unidos (es-us-x-sfg#male_1)';
+  assert.ok(isTopLatam, 'Deve priorizar voz masculina em espanhol latino');
+  assert.equal(result.isExplicitMale, true);
 });
 
 test('seleciona com prioridade a voz masculina em português quando disponível', () => {
@@ -54,7 +93,7 @@ test('seleciona com prioridade a voz masculina em português quando disponível'
   assert.equal(result.isFemaleFallback, false);
 });
 
-test('seleciona voz masculina em espanhol (Mateo / Jorge / Alvaro) para Don Mateo', () => {
+test('seleciona Mateo / Alonso / Jorge em espanhol latino para Don Mateo', () => {
   const candidateVoices = [
     createMockVoice('Microsoft Sabina - Spanish (Mexico)', 'es-MX'),
     createMockVoice('Microsoft Helena - Spanish (Spain)', 'es-ES'),
@@ -74,22 +113,19 @@ test('seleciona voz masculina em espanhol (Mateo / Jorge / Alvaro) para Don Mate
 });
 
 test('prioriza voz masculina bilíngue de idioma irmão em vez de voz feminina local', () => {
-  // Se no Windows só tiver Microsoft Maria para pt-BR, mas tiver Jorge ou Alvaro em espanhol,
-  // Don Mateo deve usar a voz masculina em vez da feminina
   const candidateVoices = [
     createMockVoice('Microsoft Maria - Portuguese (Brazil)', 'pt-BR'),
-    createMockVoice('Microsoft Jorge - Spanish (Spain)', 'es-ES')
+    createMockVoice('Microsoft Alonso Online (Natural) - Spanish (United States)', 'es-US')
   ];
 
   const result = VoiceAssistantService.selectMaleVoice('pt-BR', candidateVoices);
   assert.ok(result.voice, 'Deve encontrar uma voz');
-  assert.equal(result.voice?.name, 'Microsoft Jorge - Spanish (Spain)');
+  assert.equal(result.voice?.name, 'Microsoft Alonso Online (Natural) - Spanish (United States)');
   assert.equal(result.isExplicitMale, true);
   assert.equal(result.isFemaleFallback, false);
 });
 
-test('sinaliza fallback feminino para modulação barítona (0.68) quando não há voz masculina instalada', () => {
-  // Cenário extremo: sistema operacional só possui Maria
+test('sinaliza fallback feminino para modulação barítona (0.65) quando não há voz masculina instalada', () => {
   const candidateVoices = [
     createMockVoice('Microsoft Maria - Portuguese (Brazil)', 'pt-BR')
   ];
@@ -109,4 +145,13 @@ test('base de conhecimento do assistente não contém referências a "3D" nas fa
   const qEs = VoiceAssistantService.answerFarmerQuery('como plantar locote?', 'es-PY');
   assert.ok(!qEs.speakText.toLowerCase().includes('3d'), 'speakText es não deve conter 3d');
   assert.ok(!qEs.answerText.toLowerCase().includes('3d'), 'answerText es não deve conter 3d');
+});
+
+test('ES_LATAM_LOCALES inclui es-419 e os principais países da América Latina', () => {
+  assert.ok(ES_LATAM_LOCALES.includes('es-419'));
+  assert.ok(ES_LATAM_LOCALES.includes('es-us'));
+  assert.ok(ES_LATAM_LOCALES.includes('es-py'));
+  assert.ok(ES_LATAM_LOCALES.includes('es-mx'));
+  assert.ok(ES_LATAM_LOCALES.includes('es-ar'));
+  assert.ok(ES_LATAM_LOCALES.includes('es-co'));
 });

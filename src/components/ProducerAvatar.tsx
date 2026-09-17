@@ -131,11 +131,17 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     };
   }, [lang]);
 
+  // Eagerly pre-warm voices (vital for Android mobile browsers where voices load asynchronously)
+  useEffect(() => {
+    VoiceAssistantService.init();
+    VoiceAssistantService.waitForVoices(1200);
+  }, []);
+
   const speakText = (text: string) => {
     setAvatarState('speaking');
     VoiceAssistantService.speak(
       text,
-      lang,
+      isPt ? 'pt-BR' : 'es-419',
       () => setAvatarState('speaking'),
       () => setAvatarState('idle')
     );
