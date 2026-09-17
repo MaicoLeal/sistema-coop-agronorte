@@ -21,10 +21,12 @@ import { ProducerQuickView } from './components/ProducerQuickView';
 import { InputsManagement } from './components/InputsManagement';
 import { ReportsExport } from './components/ReportsExport';
 import { checkSupabaseConnection } from './services/supabaseClient';
+import { MobileBottomNav, MobileTab } from './components/MobileBottomNav';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('es-PY'); // Default Spanish of Paraguay
   const [activeTab, setActiveTab] = useState<string>('executive');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('inicio');
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
   const [selectedPublicToken, setSelectedPublicToken] = useState<string>('trace_token_tom_088_safe');
@@ -217,13 +219,15 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 w-full pt-20 px-4 sm:px-6 lg:px-8 pb-12">
+        <main className="flex-1 w-full pt-18 sm:pt-20 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12">
           {viewMode === 'producer_easy' ? (
             <ProducerQuickView
               lang={lang}
               currentUser={currentUser}
               zones={zones}
               batches={batches}
+              activeMobileTab={mobileTab}
+              onMobileTabChange={setMobileTab}
               onSwitchToExpert={() => setViewMode('expert_management')}
               onOpenPestDiagnosis={() => setShowPestDiagnosisModal(true)}
               onOpenMateoChat={() => setShowMateoChat(true)}
@@ -235,6 +239,7 @@ export default function App() {
               onHarvestSaved={refreshData}
               onInspectionSaved={refreshData}
               onSelectZone={setSelectedZoneId}
+              onOpenAboutSystem={() => setShowVersionModal(true)}
             />
           ) : (
             <>
@@ -365,25 +370,21 @@ export default function App() {
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-outline-variant/30 bg-surface-container-low/80 py-4 px-6 text-xs text-on-surface-variant">
+        {/* Footer (Oculta información técnica del footer principal como solicita el requerimiento 5) */}
+        <footer className="hidden md:block border-t border-outline-variant/30 bg-surface-container-low/80 py-3.5 px-6 text-xs text-on-surface-variant">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>
-              Coop Agronorte • Sistema de Manejo Hidropônico &amp; Rastreabilidade (DEMO)
+              Coop Agronorte • Sistema de Manejo Hidropónico y Trazabilidad
             </span>
-            <div className="flex items-center gap-3 font-mono text-[11px]">
-              <button
-                onClick={() => setShowVersionModal(true)}
-                className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
-              >
-                <span>Versão 1.2.0</span>
-                <span className="text-[10px] bg-surface-container-high text-on-surface-variant px-1.5 py-0.2 rounded border border-outline-variant/40">
-                  Release Notes
-                </span>
-              </button>
-              <span className="text-outline-variant">•</span>
-              <span>Fuso: America/Asuncion • LoRaWAN Ready</span>
-            </div>
+            <button
+              onClick={() => setShowVersionModal(true)}
+              className="hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
+            >
+              <span>Acerca del sistema</span>
+              <span className="text-[10px] bg-surface-container-high text-on-surface-variant px-1.5 py-0.2 rounded border border-outline-variant/40 font-mono">
+                v1.2.0
+              </span>
+            </button>
           </div>
         </footer>
       </div>
@@ -403,7 +404,7 @@ export default function App() {
         />
       )}
 
-      {/* Version Notes Modal */}
+      {/* Version Notes / About System Modal */}
       {showVersionModal && (
         <VersionModal
           lang={lang}
@@ -465,16 +466,36 @@ export default function App() {
         onCloseExternal={() => setShowMateoChat(false)}
         onOpenHarvest={() => {
           if (viewMode === 'producer_easy') {
-            // Already available directly in easy mode
+            setMobileTab('cosecha');
           } else {
             setActiveTab('harvest');
           }
         }}
         onOpenPestDiagnosis={() => setShowPestDiagnosisModal(true)}
         onOpenGreenhouses={() => {
-          setViewMode('expert_management');
-          setActiveTab('agronomic');
+          if (viewMode === 'producer_easy') {
+            setMobileTab('cultivo');
+          } else {
+            setViewMode('expert_management');
+            setActiveTab('agronomic');
+          }
         }}
+      />
+
+      {/* Fixed Mobile Bottom App Navigation */}
+      <MobileBottomNav
+        activeTab={mobileTab}
+        onTabChange={(tab) => {
+          if (tab === 'mateo') {
+            setShowMateoChat(true);
+          } else {
+            setMobileTab(tab);
+            if (viewMode !== 'producer_easy') {
+              setViewMode('producer_easy');
+            }
+          }
+        }}
+        lang={lang}
       />
     </div>
   );

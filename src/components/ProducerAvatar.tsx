@@ -54,11 +54,13 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
   // Modal open state
   const [isOpen, setIsOpen] = useState<boolean>(isOpenExternal);
   const [hasProactiveTip, setHasProactiveTip] = useState<boolean>(true);
+  const [isBubbleMinimized, setIsBubbleMinimized] = useState<boolean>(false);
 
   // Sync external open state if passed
   useEffect(() => {
     if (isOpenExternal) {
       setIsOpen(true);
+      setIsBubbleMinimized(false);
     }
   }, [isOpenExternal]);
 
@@ -237,8 +239,21 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
   return (
     <>
       {/* 🟢 FLOATING 3D AVATAR BUBBLE (Bottom Right) */}
-      {!isOpen && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-end gap-3 select-none">
+      {!isOpen && !isBubbleMinimized && (
+        <div className="fixed bottom-20 sm:bottom-5 right-4 sm:right-5 z-40 flex items-end gap-2.5 select-none">
+          {/* Botón para minimizar la burbuja en móvil */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsBubbleMinimized(true);
+            }}
+            className="w-6 h-6 rounded-full bg-surface-container-high/90 border border-outline-variant/40 text-on-surface-variant hover:text-on-surface flex items-center justify-center text-xs shadow-md transition-all active:scale-90 cursor-pointer self-start -mr-1"
+            title="Minimizar Don Mateo"
+            aria-label="Minimizar Don Mateo"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
           {/* Proactive Speech Bubble / Tip */}
           {hasProactiveTip && (
             <div className="hidden sm:flex flex-col bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl shadow-2xl border-2 border-emerald-500/40 max-w-xs animate-bounce mb-2 relative backdrop-blur-md">
@@ -276,7 +291,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               speakText(
                 isPt
                   ? 'Olá companheiro! Sou o Don Mateo, seu assistente técnico em 3D. Como posso te ajudar hoje?'
-                  : '¡Hola amigo! Soy Don Mateo, tu asistente técnico en 3D. ¿En qué te puedo ajudar hoy?'
+                  : '¡Hola amigo! Soy Don Mateo, tu asistente técnico en 3D. ¿En qué te puedo ayudar hoy?'
               );
             }}
             className="cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-hidden bg-transparent border-0 p-0"

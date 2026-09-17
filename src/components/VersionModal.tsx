@@ -22,13 +22,13 @@ export const VersionModal: React.FC<VersionModalProps> = ({ lang, onClose }) => 
             </div>
             <div>
               <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                Sistema Coop Agronorte
+                {lang === 'pt-BR' ? 'Sobre o Sistema Coop Agronorte' : 'Acerca del Sistema Coop Agronorte'}
                 <span className="bg-primary-container text-on-primary-container border border-primary/20 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">
                   v1.2.0
                 </span>
               </h3>
               <p className="text-[11px] text-on-surface-variant">
-                Release: <span className="font-mono text-on-surface font-semibold">Multimodal AI & Softer UI</span>
+                Release: <span className="font-mono text-on-surface font-semibold">Multimodal AI & Mobile App Experience</span>
               </p>
             </div>
           </div>
@@ -43,21 +43,28 @@ export const VersionModal: React.FC<VersionModalProps> = ({ lang, onClose }) => 
 
         {/* Modal Body */}
         <div className="p-6 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
-          {/* Release info card */}
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 space-y-2.5">
-            <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
-              <span className="flex items-center gap-1.5 font-semibold text-on-surface">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
-                Data de Lançamento
-              </span>
-              <span className="font-mono text-on-surface font-bold">11 de Setembro de 2026</span>
-            </div>
-            <div className="flex items-center justify-between text-[11px] text-on-surface-variant">
-              <span className="flex items-center gap-1.5 font-semibold text-on-surface">
-                <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                Homologação Fitossanitária
-              </span>
-              <span className="text-primary font-bold">SENAVE & Protocolo BPA</span>
+          {/* Ficha Técnica del Sistema */}
+          <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 space-y-2 text-[11px]">
+            <h4 className="font-bold text-on-surface uppercase tracking-wider text-[10px] text-primary">
+              {lang === 'pt-BR' ? 'Especificações Técnicas de Campo' : 'Ficha Técnica de Operación'}
+            </h4>
+            <div className="grid grid-cols-2 gap-2 pt-1 text-on-surface-variant">
+              <div>
+                <span className="block font-semibold text-on-surface">Versión de App:</span>
+                <span className="font-mono">1.2.0 (Build 2026.09)</span>
+              </div>
+              <div>
+                <span className="block font-semibold text-on-surface">Zona Horaria:</span>
+                <span className="font-mono">America/Asuncion (UTC-4)</span>
+              </div>
+              <div>
+                <span className="block font-semibold text-on-surface">Red IoT de Campo:</span>
+                <span className="font-mono text-emerald-700 dark:text-emerald-400 font-bold">LoRaWAN Ready (915 MHz)</span>
+              </div>
+              <div>
+                <span className="block font-semibold text-on-surface">Homologación:</span>
+                <span className="text-primary font-bold">SENAVE & Protocolo BPA</span>
+              </div>
             </div>
           </div>
 
