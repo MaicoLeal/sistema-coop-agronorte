@@ -218,16 +218,20 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
 
   const quickQuestions = isPt
     ? [
+        '🍅 Como fazer a desbrota do tomate?',
+        '🫑 Como podar a flor rei do pimentão?',
+        '💧 Qual o pH e EC na hidroponia?',
+        '🔬 O que causa fundo preto no tomate?',
         '🌿 Como estão as estufas agora?',
-        '📦 Como registro a colheita?',
-        '🍂 Folhas com manchas brancas',
-        '🌡️ O que é o tal de VPD?'
+        '📦 Como registro a colheita?'
       ]
     : [
+        '🍅 ¿Cómo hacer el desbrote del tomate?',
+        '🫑 ¿Cómo podar la flor rey del locote?',
+        '💧 ¿Cuál es el pH y CE en hidroponía?',
+        '🔬 ¿Qué causa el fondo negro en el tomate?',
         '🌿 ¿Cómo están los invernaderos?',
-        '📦 ¿Cómo registro la cosecha?',
-        '🍂 Hojas con manchas o polvo blanco',
-        '🌡️ ¿Qué significa el VPD?'
+        '📦 ¿Cómo registro la cosecha?'
       ];
 
   return (
