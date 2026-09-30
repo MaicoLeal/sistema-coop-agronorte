@@ -3,7 +3,7 @@ import type { VoiceAssistantResponse } from '../services/voiceAssistantService';
 
 export interface AgronomicKnowledgeItem {
   id: string;
-  category: 'hidroponia' | 'tomate' | 'pimentao' | 'agricultura_estufas' | 'pragas_doencas' | 'colheita_operacao';
+  category: 'hidroponia' | 'tomate' | 'pimentao' | 'agricultura_estufas' | 'pragas_doencas' | 'colheita_operacao' | 'conversa_geral';
   keywordsPt: string[];
   keywordsEs: string[];
   titlePt: string;
@@ -265,6 +265,62 @@ export const AGRONOMIC_KNOWLEDGE_BASE: AgronomicKnowledgeItem[] = [
     speakPt: 'Para registrar a colheita é muito fácil. Basta selecionar a estufa, informar o total de caixas colhidas e o sistema gera o lote e o QR Code de rastreabilidade na hora. Se quiser, clique em Registrar Colheita que te acompanho.',
     speakEs: 'Para registrar la cosecha solo elige el invernadero, ingresa las cajas recolectadas y el sistema genera la etiqueta QR de trazabilidad al instante. ¡Haz clic en Registrar Cosecha y lo hacemos!',
     actionType: 'open_harvest'
+  },
+
+  // ==========================================
+  // CONVERSAÇÃO NATURAL, SAUDAÇÕES & AJUDA
+  // ==========================================
+  {
+    id: 'conversa_saudacao',
+    category: 'conversa_geral',
+    keywordsPt: ['ola', 'oi', 'bom dia', 'boa tarde', 'boa noite', 'ola don mateo', 'oi don mateo', 'opa', 'ola amigo', 'salve', 'fala don mateo', 'tudo bem', 'como vai'],
+    keywordsEs: ['hola', 'buen dia', 'buenos dias', 'buenas tardes', 'buenas noches', 'hola don mateo', 'saludos', 'que tal', 'hola amigo', 'como estas', 'todo bien'],
+    titlePt: 'Saudação do Don Mateo',
+    titleEs: 'Saludo de Don Mateo',
+    answerPt: 'Olá! Sou o Don Mateo, seu consultor agronômico da Cooperativa Agronorte. Nossas estufas de tomate e pimentão estão sendo monitoradas em tempo real. Como posso te orientar hoje? Você pode me perguntar sobre manejo, poda, clima ou me enviar fotos e vídeos das suas plantas para diagnóstico imediato!',
+    answerEs: '¡Hola, amigo productor! Soy Don Mateo, tu asesor técnico de la Coop Agronorte. Los invernaderos de tomate y locote están monitoreados en tiempo real. ¿En qué te oriento hoy? Puedes consultarme sobre manejo, poda, clima o enviarme fotos y videos de tus cultivos para un diagnóstico inmediato.',
+    speakPt: 'Olá, parceiro produtor! Sou o Don Mateo. Nossas estufas estão monitoradas. Em que posso te ajudar hoje? Pode me fazer perguntas de manejo ou me enviar fotos e vídeos das plantas para diagnóstico.',
+    speakEs: '¡Hola, amigo productor! Aquí Don Mateo. Los invernaderos están monitoreados. ¿En qué te oriento hoy? Pregúntame sobre manejo o envíame fotos y videos de tus plantas para diagnóstico.',
+    actionType: 'none'
+  },
+  {
+    id: 'conversa_identidade_quem_e',
+    category: 'conversa_geral',
+    keywordsPt: ['quem e voce', 'quem e don mateo', 'o que voce e', 'qual seu nome', 'qual sua funcao', 'se apresente', 'quem e o don mateo', 'quem e esse'],
+    keywordsEs: ['quien eres', 'quien es don mateo', 'que eres', 'cual es tu nombre', 'cual es tu funcion', 'presentate', 'quien es', 'a que te dedicas'],
+    titlePt: 'Identidade e Função do Don Mateo',
+    titleEs: 'Identidad y Función de Don Mateo',
+    answerPt: 'Sou o Don Mateo, consultor e especialista técnico agronômico da Cooperativa Agronorte. Minha missão é ajudar os produtores cooperados no cultivo protegido em estufas e hidroponia (especialmente tomate e pimentão verde/locote), detecção precoce de pragas por foto e vídeo, controle de VPD e clima, e registro de colheitas com rastreabilidade QR Code.',
+    answerEs: 'Soy Don Mateo, asesor técnico agronómico de la Cooperativa Agronorte. Mi función es apoyar a los productores en el manejo de alta precisión en invernaderos e hidroponía (tomate y locote verde), diagnóstico de plagas mediante foto y video, equilibrio de VPD y clima, y registro de cosechas con trazabilidad QR.',
+    speakPt: 'Sou o Don Mateo, consultor agronômico da Cooperativa Agronorte. Te ajudo com manejo em estufas de tomate e pimentão, diagnóstico por foto e vídeo e registro das colheitas.',
+    speakEs: 'Soy Don Mateo, tu asesor agronómico en la Coop Agronorte. Te ayudo en invernaderos de tomate y locote, diagnóstico con foto y video y registro de tus cosechas.',
+    actionType: 'none'
+  },
+  {
+    id: 'conversa_ajuda_capacidades',
+    category: 'conversa_geral',
+    keywordsPt: ['ajuda', 'socorro', 'o que voce faz', 'como pode me ajudar', 'opcoes', 'menu', 'comandos', 'o que posso perguntar', 'como usar'],
+    keywordsEs: ['ayuda', 'socorro', 'que puedes hacer', 'como me ayudas', 'opciones', 'menu', 'comandos', 'que puedo consultar', 'como funciona'],
+    titlePt: 'Capacidades e Comandos do Don Mateo',
+    titleEs: 'Capacidades y Funciones de Don Mateo',
+    answerPt: 'Posso te orientar em tempo real sobre:\n\n• 📷 **Fotos e Vídeos**: Envie imagens ou gravações das folhas/frutos para diagnóstico instantâneo de pragas e fungos\n• 🍅 **Tomate**: Poda, desbrota semanal de ladrões, prevenção de fundo preto (cálcio) e pH 5.8-6.3\n• 🫑 **Pimentão Verde (Locote)**: Retirada da flor rei, controle de temperatura e ponto de colheita\n• 💧 **Hidroponia**: Condutividade elétrica (EC), oxigênio, manejo de reservatórios e substrato de coco\n• 🌿 **Monitoramento**: Status dos sensores das estufas 1 e 2 em tempo real\n• 📦 **Colheitas**: Registro de caixas colhidas e geração de QR Code rastreável',
+    answerEs: 'Puedo asesorarte en tiempo real sobre:\n\n• 📷 **Fotos y Videos**: Envía fotos o grabaciones de hojas o frutos para diagnóstico visual de plagas y hongos\n• 🍅 **Tomate**: Poda, desbrote semanal de chupones, prevención de fondo negro (calcio) y pH 5.8-6.3\n• 🫑 **Locote Verde**: Poda obligatoria de la flor rey, temperatura y punto óptimo de cosecha\n• 💧 **Hidroponía**: Conductividad CE, oxígeno, reservorios y sustrato de coco\n• 🌿 **Invernaderos**: Estado de sensores de los invernaderos 1 y 2 en tiempo real\n• 📦 **Cosecha**: Registro de cajas y emisión de código QR de trazabilidad',
+    speakPt: 'Você pode me enviar fotos ou vídeos das suas plantas para diagnóstico de pragas, consultar sobre desbrota do tomate, flor rei do pimentão, pH da hidroponia, ou ver o status das estufas e registrar colheita.',
+    speakEs: 'Puedes enviarme fotos o videos de tus plantas para diagnóstico de plagas, consultar sobre desbrote de tomate, flor rey del locote, pH en hidroponía, ver los invernaderos o registrar cosecha.',
+    actionType: 'none'
+  },
+  {
+    id: 'conversa_agradecimento',
+    category: 'conversa_geral',
+    keywordsPt: ['obrigado', 'muito obrigado', 'valeu', 'agradecido', 'show', 'otimo', 'perfeito', 'valeu don mateo', 'obrigado don mateo'],
+    keywordsEs: ['gracias', 'muchas gracias', 'excelente', 'perfecto', 'agradecido', 'muy bien', 'gracias don mateo', 'buenisimo'],
+    titlePt: 'Agradecimento',
+    titleEs: 'Agradecimiento',
+    answerPt: 'Por nada, companheiro produtor! Estou sempre à disposição cuidando da lavoura com você. Se notar qualquer anomalia nas folhas ou frutos, basta me mandar uma foto ou vídeo!',
+    answerEs: '¡A las órdenes, amigo productor! Siempre a disposición acompañando tu producción. Si notas cualquier detalle raro en las hojas o frutos, ¡envíame una foto o video!',
+    speakPt: 'Por nada, parceiro! Sempre à disposição. Qualquer dúvida ou se ver algo estranho nas plantas, só me mandar uma foto ou vídeo.',
+    speakEs: '¡A las órdenes, amigo productor! Siempre a mano. Si ves cualquier mancha en las plantas, envíame foto o video.',
+    actionType: 'none'
   }
 ];
 
@@ -369,6 +425,34 @@ export function findAgronomicAnswer(
       (query.includes('fundo preto') || query.includes('podridao apical') || query.includes('podredumbre apical') || query.includes('calcio'))
     ) {
       itemScore += 50;
+    }
+
+    if (
+      item.id === 'conversa_saudacao' &&
+      (query.includes('hola') || query.includes('ola') || query.includes('buenos dias') || query.includes('bom dia') || query.includes('buenas tardes') || query.includes('boa tarde') || query.includes('que tal') || query.includes('saludos'))
+    ) {
+      itemScore += 60;
+    }
+
+    if (
+      item.id === 'conversa_identidade_quem_e' &&
+      (query.includes('quien eres') || query.includes('quem e') || query.includes('quien es don mateo') || query.includes('quem e don mateo') || query.includes('qual seu nome') || query.includes('cual es tu nombre'))
+    ) {
+      itemScore += 60;
+    }
+
+    if (
+      item.id === 'conversa_ajuda_capacidades' &&
+      (query.includes('ajuda') || query.includes('ayuda') || query.includes('que puedes hacer') || query.includes('o que voce faz') || query.includes('como usar') || query.includes('como funciona'))
+    ) {
+      itemScore += 60;
+    }
+
+    if (
+      item.id === 'conversa_agradecimento' &&
+      (query.includes('obrigado') || query.includes('gracias') || query.includes('valeu'))
+    ) {
+      itemScore += 60;
     }
 
     if (itemScore > bestScore) {

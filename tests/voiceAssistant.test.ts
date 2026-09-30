@@ -168,3 +168,42 @@ test('STUDIO_AUDIO_REGISTRY registra clipe oficial ElevenLabs para saudação do
   assert.ok(greetingClip?.transcriptEs.includes('Coop Agronorte'));
 });
 
+test('findMatchingStudioClip só ativa o áudio da saudação quando a fala é a saudação oficial completa', () => {
+  const fullGreeting =
+    'Hola, amigo productor. Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?';
+  const matched = VoiceAssistantService.findMatchingStudioClip(fullGreeting);
+  assert.ok(matched, 'Deve corresponder à saudação oficial');
+  assert.equal(matched?.id, 'greeting_es');
+});
+
+test('findMatchingStudioClip NÃO ativa a saudação em perguntas normais ou respostas comuns (evita bug de repetição)', () => {
+  // Frases que antes causavam falso-positivo por conterem "coop agronorte" ou substring de normTranscript
+  const answerMentioningCoop =
+    'En la Coop Agronorte usamos dos sistemas principales: Sistema NFT y cultivo en sustrato inerte.';
+  const shortQuestion = '¿Cómo hago el desbrote del tomate?';
+  const greetingWord = 'Hola';
+  const generalHelp = 'Soy Don Mateo, asesor técnico en la cooperativa.';
+
+  assert.equal(
+    VoiceAssistantService.findMatchingStudioClip(answerMentioningCoop),
+    null,
+    'Não deve ativar áudio de saudação em resposta agronômica'
+  );
+  assert.equal(
+    VoiceAssistantService.findMatchingStudioClip(shortQuestion),
+    null,
+    'Não deve ativar áudio de saudação em pergunta do produtor'
+  );
+  assert.equal(
+    VoiceAssistantService.findMatchingStudioClip(greetingWord),
+    null,
+    'Não deve ativar áudio de saudação completa para a palavra simples Hola'
+  );
+  assert.equal(
+    VoiceAssistantService.findMatchingStudioClip(generalHelp),
+    null,
+    'Não deve ativar áudio de saudação em respostas de identidade'
+  );
+});
+
+

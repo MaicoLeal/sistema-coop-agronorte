@@ -79,3 +79,28 @@ test('fallback contextual não repete a saudação inicial e oferece os tópicos
   assert.ok(!resUnknown.answerText.includes('Olá, produtor! Sou o Don Mateo, seu assistente da Coop Agronorte. Posso te ajudar a conferir a água'), 'Não deve repetir a saudação padrão');
   assert.ok(resUnknown.answerText.includes('Cultivo de Tomate') && resUnknown.answerText.includes('Cultivo de Pimentão Verde'), 'Deve apresentar as opções temáticas da cooperativa');
 });
+
+test('responde a saudações comuns (Hola / Olá / Buenos días) sem cair no fallback genérico', () => {
+  const resHolaEs = VoiceAssistantService.answerFarmerQuery('Hola Don Mateo', 'es-PY');
+  assert.ok(resHolaEs.answerText.includes('Don Mateo'), 'Deve cumprimentar como Don Mateo');
+  assert.ok(resHolaEs.answerText.includes('invernaderos') || resHolaEs.answerText.includes('fotos'), 'Deve convidar a consultas ou envio de foto/video');
+  assert.ok(!resHolaEs.answerText.includes('No localicé ese término específico'), 'Não deve dar fallback de termo não encontrado');
+
+  const resOlaPt = VoiceAssistantService.answerFarmerQuery('Olá, bom dia', 'pt-BR');
+  assert.ok(resOlaPt.answerText.includes('Don Mateo'));
+  assert.ok(!resOlaPt.answerText.includes('Não encontrei esse termo específico'));
+});
+
+test('responde sobre identidade e capacidades (Quem é você / O que você faz) de forma precisa', () => {
+  const resWhoEs = VoiceAssistantService.answerFarmerQuery('¿Quién eres?', 'es-PY');
+  assert.ok(resWhoEs.answerText.includes('Don Mateo') && resWhoEs.answerText.includes('Agronorte'), 'Deve explicar quem é Don Mateo');
+
+  const resHelpPt = VoiceAssistantService.answerFarmerQuery('Como você pode me ajudar?', 'pt-BR');
+  assert.ok(resHelpPt.answerText.includes('Fotos e Vídeos') || resHelpPt.answerText.includes('Tomate'), 'Deve listar as capacidades do assistente');
+});
+
+test('responde a agradecimentos (Gracias / Obrigado) com cortesia agronômica', () => {
+  const resThanksEs = VoiceAssistantService.answerFarmerQuery('Muchas gracias Don Mateo', 'es-PY');
+  assert.ok(resThanksEs.answerText.includes('órdenes') || resThanksEs.answerText.includes('disposición'), 'Deve responder cordialmente');
+});
+

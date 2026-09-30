@@ -6,6 +6,7 @@ import {
   VoiceAssistantResponse
 } from '../services/voiceAssistantService';
 import { requestLocalFarmerAnswer } from '../services/localAiService';
+import { AIDiagnosisService } from '../services/aiDiagnosisService';
 import {
   Mic,
   MicOff,
@@ -17,7 +18,10 @@ import {
   MessageCircle,
   HelpCircle,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  Video,
+  Maximize2
 } from 'lucide-react';
 import { DonMateo3DAvatar, AvatarState } from './DonMateo3D/DonMateo3DAvatar';
 import { DonMateoThreeScene } from './DonMateo3D/DonMateoThreeScene';
@@ -38,6 +42,16 @@ interface ChatMessage {
   time: string;
   speakText?: string;
   actionType?: 'open_harvest' | 'open_pest_diagnosis' | 'show_greenhouses' | 'none';
+  mediaType?: 'image' | 'video';
+  mediaUrl?: string;
+  mediaName?: string;
+}
+
+interface PendingMedia {
+  file: File;
+  type: 'image' | 'video';
+  previewUrl: string;
+  name: string;
 }
 
 export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
@@ -74,9 +88,13 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
   const [inputText, setInputText] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
+  const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<{ start: () => void; stop: () => void; isSupported: boolean } | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize welcoming message
   useEffect(() => {
@@ -165,16 +183,68 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     }
   };
 
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const previewUrl = event.target?.result as string;
+      setPendingMedia({
+        file,
+        type: 'image',
+        previewUrl,
+        name: file.name
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleVideoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMedia({
+      file,
+      type: 'video',
+      previewUrl,
+      name: file.name
+    });
+    e.target.value = '';
+  };
+
+  const handleRemovePendingMedia = () => {
+    setPendingMedia(null);
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
-    if (!text) return;
+    const currentMedia = pendingMedia;
+    if (!text && !currentMedia) return;
 
     setInputText('');
+    setPendingMedia(null);
+
+    const userMsgText =
+      text ||
+      (currentMedia?.type === 'image'
+        ? isPt
+          ? '📷 Foto da planta enviada para diagnóstico'
+          : '📷 Foto del cultivo enviada para diagnóstico'
+        : isPt
+        ? '🎥 Vídeo da lavoura enviado para inspeção'
+        : '🎥 Video del cultivo enviado para inspección');
+
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
-      text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      text: userMsgText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      mediaType: currentMedia?.type,
+      mediaUrl: currentMedia?.previewUrl,
+      mediaName: currentMedia?.name
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -182,14 +252,90 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
 
     let response: VoiceAssistantResponse;
 
-    try {
-      response = await requestLocalFarmerAnswer({
-        query: text,
-        language: lang,
-      });
-    } catch (error) {
-      console.warn('Ollama indisponível; usando respostas locais básicas.', error);
-      response = VoiceAssistantService.answerFarmerQuery(text, lang);
+    if (currentMedia) {
+      try {
+        const diag = await AIDiagnosisService.analyzeFieldEvidence({
+          photoBase64: currentMedia.type === 'image' ? currentMedia.previewUrl : undefined,
+          videoFile: currentMedia.type === 'video' ? currentMedia.file : undefined,
+          mediaType: currentMedia.type === 'image' ? 'photo' : 'video',
+          technicianNotes: text || undefined
+        });
+
+        const title = isPt
+          ? diag.pestOrFungus
+          : diag.pestOrFungus === 'Oídio / Míldio Polverulento'
+          ? 'Oídio / Cenicilla'
+          : diag.pestOrFungus === 'Traça-do-Tomateiro'
+          ? 'Polilla del Tomate'
+          : diag.pestOrFungus === 'Míldio / Requeima'
+          ? 'Tizón Tardío / Mildiu'
+          : diag.pestOrFungus === 'Mosca-Branca'
+          ? 'Mosca Blanca'
+          : diag.pestOrFungus === 'Podridão Apical / Fundo Preto'
+          ? 'Pudrición Apical / Fondo Negro'
+          : diag.pestOrFungus === 'Antracnose do Locote / Pimentão'
+          ? 'Antracnosis en Locote'
+          : diag.pestOrFungus;
+
+        const description = isPt ? diag.descriptionPt : diag.descriptionEs;
+        const solution = isPt ? diag.solutionAudioScriptPt : diag.solutionAudioScriptEs;
+        const severityLabel =
+          diag.severity === 'critica'
+            ? isPt
+              ? '🚨 Crítica (Ação Imediata)'
+              : '🚨 Crítica (Acción Inmediata)'
+            : diag.severity === 'moderada'
+            ? isPt
+              ? '⚠️ Moderada'
+              : '⚠️ Moderada'
+            : isPt
+            ? 'ℹ️ Leve'
+            : 'ℹ️ Leve';
+
+        const answerText = isPt
+          ? `🔬 **Diagnóstico Visual IA**: ${title}\n` +
+            `📊 **Certeza**: ${diag.confidencePct}% | **Severidade**: ${severityLabel}\n\n` +
+            `🌿 **Sintomas Identificados**: ${description}\n\n` +
+            `📋 **Recomendação Agronômica**: ${solution}\n\n` +
+            `🛡️ **Controle Biológico Aprovado SENAVE**: ${diag.biologicalControl}`
+          : `🔬 **Diagnóstico Visual IA**: ${title}\n` +
+            `📊 **Certeza**: ${diag.confidencePct}% | **Severidad**: ${severityLabel}\n\n` +
+            `🌿 **Síntomas Identificados**: ${description}\n\n` +
+            `📋 **Recomendación Agronómica**: ${solution}\n\n` +
+            `🛡️ **Control Biológico SENAVE**: ${diag.biologicalControl}`;
+
+        const mediaWord =
+          currentMedia.type === 'image'
+            ? isPt
+              ? 'a sua foto'
+              : 'tu foto'
+            : isPt
+            ? 'o seu vídeo'
+            : 'tu video';
+
+        const speakText = isPt
+          ? `Analisei ${mediaWord} da lavoura. Identifiquei indícios de ${title}, com severidade ${diag.severity}. Recomendo verificar as estufas e aplicar o controle biológico indicado. Deixei o protocolo completo no chat.`
+          : `Analicé ${mediaWord} del cultivo. Detecté indicios de ${title}, con severidad ${diag.severity}. Te sugiero ventilar el invernadero y aplicar el control biológico correspondiente. Tienes el informe completo en el chat.`;
+
+        response = {
+          answerText,
+          speakText,
+          actionType: 'open_pest_diagnosis'
+        };
+      } catch (err) {
+        console.warn('Falha no diagnóstico visual, usando respostas locais:', err);
+        response = VoiceAssistantService.answerFarmerQuery(text || 'diagnostico', lang);
+      }
+    } else {
+      try {
+        response = await requestLocalFarmerAnswer({
+          query: text,
+          language: lang,
+        });
+      } catch (error) {
+        console.warn('Ollama indisponível; usando respostas locais básicas.', error);
+        response = VoiceAssistantService.answerFarmerQuery(text, lang);
+      }
     }
 
     const mateoMsg: ChatMessage = {
@@ -486,6 +632,44 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
                         : 'bg-surface-container-lowest text-on-surface border border-outline-variant/30 rounded-tl-xs'
                     }`}
                   >
+                    {/* Render Attached Image */}
+                    {msg.mediaType === 'image' && msg.mediaUrl && (
+                      <div className="mb-2 relative group rounded-xl overflow-hidden border border-outline-variant/30 shadow-xs max-w-xs">
+                        <img
+                          src={msg.mediaUrl}
+                          alt={msg.mediaName || 'Evidência fotográfica'}
+                          className="w-full max-h-52 object-cover rounded-xl transition-transform duration-200 group-hover:scale-105 cursor-pointer"
+                          onClick={() => setLightboxImage(msg.mediaUrl!)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setLightboxImage(msg.mediaUrl!)}
+                          className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-black text-white transition-colors shadow-xs cursor-pointer"
+                          title={isPt ? 'Ampliar foto' : 'Ampliar foto'}
+                        >
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Render Attached Video */}
+                    {msg.mediaType === 'video' && msg.mediaUrl && (
+                      <div className="mb-2 rounded-xl overflow-hidden border border-outline-variant/30 shadow-xs max-w-xs bg-black">
+                        <video
+                          src={msg.mediaUrl}
+                          controls
+                          playsInline
+                          className="w-full max-h-56 rounded-xl"
+                        />
+                        {msg.mediaName && (
+                          <div className="p-1.5 text-[10px] text-zinc-300 truncate bg-zinc-900/90 flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span className="truncate">{msg.mediaName}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                     <div className="flex items-center justify-between gap-3 mt-1.5 pt-1 border-t border-current/10 text-[10px] opacity-70">
                       <span>{msg.time}</span>
@@ -518,13 +702,91 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               ))}
             </div>
 
-            {/* Footer Input & Mic Bar */}
+            {/* Pending Media Attachment Preview */}
+            {pendingMedia && (
+              <div className="px-3 py-2 bg-surface-container border-t border-outline-variant/30 flex items-center justify-between gap-3 text-xs animate-in slide-in-from-bottom-2">
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  {pendingMedia.type === 'image' ? (
+                    <img
+                      src={pendingMedia.previewUrl}
+                      alt="Prévia"
+                      className="w-10 h-10 rounded-lg object-cover border border-emerald-500/50 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-emerald-950 flex items-center justify-center border border-emerald-500/50 text-emerald-400 shrink-0">
+                      <Video className="w-5 h-5 animate-pulse" />
+                    </div>
+                  )}
+                  <div className="truncate">
+                    <p className="font-semibold text-on-surface truncate">
+                      {pendingMedia.type === 'image' ? t.photoReady : t.videoReady}
+                    </p>
+                    <p className="text-[11px] text-on-surface-variant truncate">
+                      {pendingMedia.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemovePendingMedia}
+                  className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-on-surface-variant hover:text-error transition-colors cursor-pointer shrink-0"
+                  title={t.removeMedia}
+                  aria-label={t.removeMedia}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Hidden File Inputs for Camera / Gallery */}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageSelected}
+              className="hidden"
+              aria-label="Upload de foto"
+            />
+            <input
+              ref={videoInputRef}
+              type="file"
+              accept="video/*"
+              capture="environment"
+              onChange={handleVideoSelected}
+              className="hidden"
+              aria-label="Upload de vídeo"
+            />
+
+            {/* Footer Input, Media & Mic Bar */}
             <div className="p-3 bg-surface-container-lowest border-t border-outline-variant/30 flex items-center gap-2 shrink-0">
+              {/* Camera Button for Photo / Crop Inspection */}
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="p-2.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95"
+                title={t.sendPhoto}
+                aria-label={t.sendPhoto}
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+
+              {/* Video Button for Crop Recording */}
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                className="p-2.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors cursor-pointer shrink-0 shadow-xs active:scale-95"
+                title={t.sendVideo}
+                aria-label={t.sendVideo}
+              >
+                <Video className="w-5 h-5" />
+              </button>
+
               {/* Mic / Voice Input Button (Large for farmers) */}
               {speechSupported && (
                 <button
                   onClick={toggleListening}
-                  className={`p-3 rounded-full transition-all cursor-pointer shadow-md shrink-0 flex items-center justify-center ${
+                  className={`p-2.5 sm:p-3 rounded-full transition-all cursor-pointer shadow-md shrink-0 flex items-center justify-center active:scale-95 ${
                     isListening
                       ? 'bg-error text-on-error animate-pulse ring-4 ring-error/30'
                       : 'bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary'
@@ -548,7 +810,15 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSendMessage();
                 }}
-                placeholder={isListening ? t.listeningVoice : t.typeYourQuestion}
+                placeholder={
+                  isListening
+                    ? t.listeningVoice
+                    : pendingMedia
+                    ? isPt
+                      ? 'Adicione uma observação ou clique Enviar...'
+                      : 'Añade una observación o presiona Enviar...'
+                    : t.typeYourQuestion
+                }
                 disabled={isListening}
                 className="flex-1 bg-surface-container-high border border-outline-variant/40 rounded-full px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-hidden focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
@@ -556,13 +826,37 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               {/* Send Button */}
               <button
                 onClick={() => handleSendMessage()}
-                disabled={!inputText.trim()}
-                className="p-3 rounded-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer shadow-md shrink-0"
+                disabled={!inputText.trim() && !pendingMedia}
+                className="p-3 rounded-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer shadow-md shrink-0 active:scale-95"
                 title={t.confirm}
               >
                 <Send className="w-5 h-5" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔍 Lightbox Modal for Full Resolution Image Inspection */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <img
+              src={lightboxImage}
+              alt="Evidência ampliada"
+              className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl border border-white/20"
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-3 right-3 p-2.5 rounded-full bg-black/70 hover:bg-black text-white cursor-pointer shadow-lg border border-white/30 transition-transform active:scale-90"
+              title={t.close}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}

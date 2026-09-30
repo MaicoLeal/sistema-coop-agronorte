@@ -203,11 +203,8 @@ export const STUDIO_AUDIO_REGISTRY: StudioAudioClip[] = [
     transcriptEs:
       'Hola, amigo productor. Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?',
     keywords: [
-      'hola amigo productor',
-      'asistente tecnico',
-      'coop agronorte',
-      'cuidando tus invernaderos',
-      'asesor agronomico de la cooperativa agronorte'
+      'hola amigo productor soy don mateo tu asistente tecnico de la coop agronorte',
+      'hola amigo productor soy don mateo tu asistente tecnico'
     ]
   }
 ];
@@ -549,6 +546,68 @@ export class VoiceAssistantService {
   }
 
   /**
+   * Matches input text strictly against pre-recorded studio ElevenLabs clips.
+   * Prevents matching partial words or generic phrases, ensuring regular questions
+   * and conversational answers are synthesized dynamically without repeating the greeting.
+   */
+  public static findMatchingStudioClip(text: string): StudioAudioClip | null {
+    if (!text || typeof text !== 'string') return null;
+
+    const normalizedInput = text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!normalizedInput) return null;
+
+    for (const clip of STUDIO_AUDIO_REGISTRY) {
+      const normTranscript = clip.transcriptEs
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // 1. Exact match with transcript
+      if (normalizedInput === normTranscript) {
+        return clip;
+      }
+
+      // 2. Strict full greeting: Must be long, start with greeting and contain key phrases
+      if (
+        normalizedInput.length >= 75 &&
+        normalizedInput.startsWith('hola amigo productor') &&
+        normalizedInput.includes('coop agronorte') &&
+        normalizedInput.includes('cuidando tus invernaderos')
+      ) {
+        return clip;
+      }
+
+      // 3. Exact match with registered full phrase keywords
+      const matchesKeyword = clip.keywords.some((kw) => {
+        const normKw = kw
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        return normKw.length > 25 && normalizedInput === normKw;
+      });
+
+      if (matchesKeyword) {
+        return clip;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Speaks the provided text using a human-like warm male tone.
    * Plays pre-recorded studio ElevenLabs clips when available, or synthesizes using
    * Paraguayan/Latin American Spanish with lower pitch to eliminate robotic cadence.
@@ -561,38 +620,9 @@ export class VoiceAssistantService {
   ): { stop: () => void } {
     const isPortuguese = typeof lang === 'string' && (lang === 'pt-BR' || lang.startsWith('pt'));
 
-    // 1. Check if there is a studio-quality ElevenLabs recording registered for this phrase
+    // 1. Check if there is a studio-quality ElevenLabs recording strictly registered for this phrase
     if (!isPortuguese && typeof window !== 'undefined') {
-      const normalizedInput = text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
-
-      const matchedClip = STUDIO_AUDIO_REGISTRY.find((clip) => {
-        const normTranscript = clip.transcriptEs
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .trim();
-
-        if (
-          normalizedInput === normTranscript ||
-          normalizedInput.includes(normTranscript) ||
-          normTranscript.includes(normalizedInput)
-        ) {
-          return true;
-        }
-
-        return clip.keywords.some((kw) => {
-          const normKw = kw
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
-          return normalizedInput.includes(normKw);
-        });
-      });
+      const matchedClip = this.findMatchingStudioClip(text);
 
       if (matchedClip) {
         console.info(`[Don Mateo Studio Audio] Reproduzindo áudio ElevenLabs: ${matchedClip.id}`);

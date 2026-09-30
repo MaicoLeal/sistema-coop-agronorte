@@ -160,8 +160,14 @@ export const translations = {
     quickPestTitle: 'Sacar Foto a Plaga o Mancha (IA)',
     easyModeBadge: 'Modo Campo Fácil',
     audioListenResponse: 'Escuchar recomendación con voz',
-    closeAssistant: 'Cerrar asistente',
     tapToSpeak: 'Tocar para hablar',
+    sendPhoto: 'Tomar o adjuntar foto del cultivo',
+    sendVideo: 'Grabar o adjuntar video del cultivo',
+    photoReady: 'Foto lista para análisis agronómico',
+    videoReady: 'Video listo para inspección agronómica',
+    removeMedia: 'Quitar archivo adjunto',
+    analyzingMedia: 'Analizando foto o video con IA agronómica...',
+    diagnosisTitle: 'Diagnóstico Agronómico Visual IA',
 
     // Inputs Management & Fertigation
     navInputs: 'Insumos & Fertirrigación',
@@ -327,8 +333,14 @@ export const translations = {
     quickPestTitle: 'Tirar Foto de Praga ou Mancha (IA)',
     easyModeBadge: 'Modo Campo Fácil',
     audioListenResponse: 'Ouvir recomendação com voz',
-    closeAssistant: 'Fechar assistente',
     tapToSpeak: 'Tocar para falar',
+    sendPhoto: 'Tirar ou anexar foto da planta',
+    sendVideo: 'Gravar ou anexar vídeo da lavoura',
+    photoReady: 'Foto pronta para análise agronômica',
+    videoReady: 'Vídeo pronto para inspeção agronômica',
+    removeMedia: 'Remover arquivo anexado',
+    analyzingMedia: 'Analisando foto ou vídeo com IA agronômica...',
+    diagnosisTitle: 'Diagnóstico Agronômico Visual IA',
 
     // Inputs Management & Fertigation
     navInputs: 'Insumos & Fertirrigação',
