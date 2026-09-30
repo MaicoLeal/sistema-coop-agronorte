@@ -88,11 +88,8 @@ export const FEMALE_VOICE_KEYWORDS = [
   'es-es-x-ana',
   'es-us-x-sfb',
   'es-es-x-sfb',
-  // Default Chrome female voices
-  'google português do brasil',
-  'google português',
-  'google español',
-  'google espanol'
+  // Explicit female voice names only. Do not block generic Google Spanish/Portuguese
+  // voices here because Android often exposes high-quality voices with generic names.
 ];
 
 export const PT_MALE_KEYWORDS = [
@@ -166,6 +163,20 @@ export const ES_MALE_KEYWORDS = [
   'ignacio',
   'rodrigo',
   'fernando',
+  'hector',
+  'héctor',
+  'david',
+  'antonio',
+  'pedro',
+  'luis',
+  'sergio',
+  'alberto',
+  'santiago',
+  'sebastian',
+  'sebastián',
+  'jose',
+  'josé',
+  'juan',
   'es-us-x-sfg', // Google Android LatAm male voice
   'es-es-x-eed', // Google Android male voice
   'es-419',
@@ -174,6 +185,7 @@ export const ES_MALE_KEYWORDS = [
   'hombre',
   'masculin',
   'varón',
+  'varon',
   'natural male'
 ];
 
@@ -278,7 +290,8 @@ export class VoiceAssistantService {
 
   /**
    * Evaluates available voices and selects the best natural male voice for Don Mateo,
-   * giving top priority to Latin American Spanish (es-419), Natural, Google, and Microsoft voices.
+   * giving top priority to Latin American Spanish (es-PY, es-419, es-MX, es-US), Natural, Google, and Microsoft voices.
+   * GUARANTEE: Never switches to a Portuguese voice when Spanish is requested.
    */
   public static selectMaleVoice(
     lang: 'pt-BR' | 'es-PY' | 'es-ES' | 'es-419' | Language | string,
@@ -297,26 +310,51 @@ export class VoiceAssistantService {
 
     const isPortuguese = typeof lang === 'string' && (lang === 'pt-BR' || lang.startsWith('pt'));
 
-    const isFemaleName = (name: string) => {
+    const isSpanishVoice = (v: SpeechSynthesisVoice): boolean => {
+      const vl = (v.lang || '').toLowerCase().replace('_', '-');
+      const name = (v.name || '').toLowerCase();
+      return (
+        vl.startsWith('es') ||
+        vl.includes('-es') ||
+        vl.includes('_es') ||
+        name.includes('español') ||
+        name.includes('spanish') ||
+        name.includes('castellano')
+      );
+    };
+
+    const isPortugueseVoice = (v: SpeechSynthesisVoice): boolean => {
+      const vl = (v.lang || '').toLowerCase().replace('_', '-');
+      const name = (v.name || '').toLowerCase();
+      return (
+        vl.startsWith('pt') ||
+        vl.includes('-pt') ||
+        vl.includes('_pt') ||
+        name.includes('português') ||
+        name.includes('portugues') ||
+        name.includes('portuguese')
+      );
+    };
+
+    // Filter strictly by target language family so we never cross-contaminate languages
+    const targetVoices = voices.filter(isPortuguese ? isPortugueseVoice : isSpanishVoice);
+
+    // If no voice matches the target language, do NOT cross language boundaries!
+    if (targetVoices.length === 0) {
+      return { voice: null, isExplicitMale: false, isFemaleFallback: false };
+    }
+
+    const isExplicitMale = (name: string, isPt: boolean): boolean => {
       const lower = name.toLowerCase();
-      // If voice has explicit male indicator (like 'male', 'hombre', 'latino', 'es-us-x-sfg', 'es-419'),
-      // do not flag it as female just because it starts with generic "Google español"
-      const hasExplicitMaleToken =
-        ES_MALE_KEYWORDS.some((kw) => lower.includes(kw)) ||
-        PT_MALE_KEYWORDS.some((kw) => lower.includes(kw));
-
-      if (hasExplicitMaleToken) {
-        const strictFemaleKeywords = [
-          'female', 'mulher', 'mujer', 'femenina', 'feminina', 'femenino', 'feminino',
-          'maria', 'mary', 'helena', 'elena', 'sabina', 'laura', 'luciana', 'francisca',
-          'thalita', 'talita', 'leticia', 'letícia', 'camila', 'vitoria', 'vitória',
-          'monica', 'mónica', 'paulina', 'victoria', 'zira', 'carmen', 'conchita',
-          'ines', 'inês', 'rosa', 'raquel', 'mia', 'sofia', 'jimena', 'dalia',
-          'pt-br-x-afy', 'es-es-x-ana', 'es-us-x-sfb', 'es-es-x-sfb'
-        ];
-        return strictFemaleKeywords.some((kw) => lower.includes(kw));
+      if (isPt) {
+        return PT_MALE_KEYWORDS.some((kw) => lower.includes(kw));
       }
+      return ES_MALE_KEYWORDS.some((kw) => lower.includes(kw));
+    };
 
+    const isFemaleName = (name: string, isPt: boolean): boolean => {
+      if (isExplicitMale(name, isPt)) return false;
+      const lower = name.toLowerCase();
       return FEMALE_VOICE_KEYWORDS.some((kw) => lower.includes(kw));
     };
 
@@ -325,96 +363,87 @@ export class VoiceAssistantService {
       return ES_LATAM_LOCALES.some((loc) => vl.startsWith(loc));
     };
 
-    // Filter out all known female voices first
-    const nonFemaleVoices = voices.filter((v) => !isFemaleName(v.name));
-
-    // Scoring function to prioritize Latin American Spanish (es-419), Google, Natural & Microsoft male voices
-    const scoreVoice = (v: SpeechSynthesisVoice): { score: number; isExplicitMale: boolean } => {
-      let score = 0;
-      let isExplicitMale = false;
+    // Scoring function
+    const scoreVoice = (v: SpeechSynthesisVoice): { score: number; explicitMale: boolean; female: boolean } => {
+      let score = 100; // Base score for correct language
       const name = v.name.toLowerCase();
-      const vl = v.lang.toLowerCase().replace('_', '-');
+      const vl = (v.lang || '').toLowerCase().replace('_', '-');
+      const explicitMale = isExplicitMale(name, isPortuguese);
+      const female = isFemaleName(name, isPortuguese);
 
       if (isPortuguese) {
-        if (vl.startsWith('pt')) {
-          score += 120;
-          if (vl.includes('br')) score += 30;
-        } else if (vl.startsWith('es')) {
-          score += 40; // bilingual fallback
-        }
-
-        if (PT_MALE_KEYWORDS.some((kw) => name.includes(kw))) {
-          score += 100;
-          isExplicitMale = true;
-        } else if (ES_MALE_KEYWORDS.some((kw) => name.includes(kw))) {
-          score += 60;
-          isExplicitMale = true;
-        }
-
-        if (name.includes('natural')) score += 45;
-        if (name.includes('google')) score += 35;
-        if (name.includes('microsoft')) score += 25;
+        if (vl.includes('br')) score += 50; // Prioritize Brazilian Portuguese
+        if (explicitMale) score += 120;
+        else if (!female) score += 50; // Neutral voice
+        // Provider bonus
+        if (name.includes('natural') || name.includes('neural')) score += 50;
+        if (name.includes('google') || name.includes('pt-br-x-afs')) score += 40;
+        if (name.includes('microsoft')) score += 30;
       } else {
-        // Spanish: Highest priority for es-419, then Latin American locales, then Google/Natural/Microsoft
-        if (vl === 'es-419' || vl.startsWith('es-419')) {
-          score += 200; // Decisive top priority for es-419 as requested
-        } else if (isLatam(vl)) {
-          score += 120; // Latin American locales (es-us, es-mx, es-py, etc.)
-        } else if (vl.startsWith('es')) {
-          score += 60; // Other Spanish (e.g. es-es)
-        } else if (vl.startsWith('pt')) {
-          score += 30; // Bilingual fallback
+        // Spanish
+        const reqLower = typeof lang === 'string' ? lang.toLowerCase().replace('_', '-') : '';
+
+        // Exact match with requested language (e.g. es-py or es-419)
+        if (reqLower && vl === reqLower) {
+          score += 200;
         }
 
-        // Extra bonus for explicit es-419 or latino indicator in name
+        // Locale priority: Paraguay > LatAm > Peninsular
+        if (vl === 'es-py' || vl.startsWith('es-py')) {
+          score += 250; // Paraguay Cooperativa Agronorte priority
+        } else if (vl === 'es-419' || vl.startsWith('es-419')) {
+          score += 180;
+        } else if (isLatam(vl)) {
+          score += 150; // Other Latin American (es-mx, es-us, es-ar, es-co, etc.)
+        } else if (vl.startsWith('es')) {
+          score += 60; // Spain (es-es)
+        }
+
+        // Bonus for explicit latino/es-419 in voice name
         if (name.includes('es-419') || name.includes('latino') || name.includes('419')) {
           score += 40;
         }
 
-        // Male name keywords (Mateo, Alonso, Carlos, Jorge, Raul, etc.)
-        if (ES_MALE_KEYWORDS.some((kw) => name.includes(kw))) {
-          score += 100;
-          isExplicitMale = true;
-        } else if (PT_MALE_KEYWORDS.some((kw) => name.includes(kw))) {
-          score += 50;
-          isExplicitMale = true;
+        // Gender priority: male > neutral > female fallback
+        if (explicitMale) {
+          score += 150;
+        } else if (!female) {
+          score += 70; // Neutral voice like "Google español"
         }
 
-        // Provider preferences requested by user: Google / Natural / Microsoft
-        if (name.includes('natural')) score += 50;
-        if (name.includes('google') || name.includes('es-us-x-sfg') || name.includes('es-419')) score += 45;
-        if (name.includes('microsoft')) score += 35;
+        // Provider quality bonus
+        if (name.includes('natural') || name.includes('neural')) score += 50;
+        if (name.includes('google') || name.includes('es-us-x-sfg') || name.includes('es-es-x-eed')) score += 40;
+        if (name.includes('microsoft')) score += 30;
       }
 
-      return { score, isExplicitMale };
+      return { score, explicitMale, female };
     };
 
-    if (nonFemaleVoices.length > 0) {
-      const scored = nonFemaleVoices.map((v) => {
-        const { score, isExplicitMale } = scoreVoice(v);
-        return { voice: v, score, isExplicitMale };
-      });
+    // Score all voices in target language
+    const scored = targetVoices.map((v) => {
+      const { score, explicitMale, female } = scoreVoice(v);
+      return { voice: v, score, explicitMale, female };
+    });
 
-      scored.sort((a, b) => b.score - a.score);
+    // Sort descending by score
+    scored.sort((a, b) => b.score - a.score);
 
-      const best = scored[0];
-      if (best && best.score > 0) {
-        return {
-          voice: best.voice,
-          isExplicitMale: best.isExplicitMale,
-          isFemaleFallback: false
-        };
-      }
+    // 1. First choice: Best non-female voice (male or neutral)
+    const maleOrNeutral = scored.filter((item) => !item.female);
+    if (maleOrNeutral.length > 0 && maleOrNeutral[0].score > 0) {
+      return {
+        voice: maleOrNeutral[0].voice,
+        isExplicitMale: maleOrNeutral[0].explicitMale,
+        isFemaleFallback: false
+      };
     }
 
-    // Last Fallback: If literally only female/unverified voices exist on client device
-    const fallbackVoice =
-      voices.find((v) => (isPortuguese ? v.lang.toLowerCase().startsWith('pt') : v.lang.toLowerCase().startsWith('es'))) ||
-      voices[0] ||
-      null;
-
+    // 2. Fallback: If only female voices exist for this language on the user's OS,
+    // use the highest scoring female voice in the CORRECT language with baritone modulation!
+    const bestFallback = scored[0];
     return {
-      voice: fallbackVoice,
+      voice: bestFallback ? bestFallback.voice : null,
       isExplicitMale: false,
       isFemaleFallback: true
     };
@@ -432,8 +461,8 @@ export class VoiceAssistantService {
 
   /**
    * Speaks the provided text using a human-like warm male tone.
-   * Prioritizes es-419 for Latin American Spanish, lower pitch (0.82) and lower speed (0.88)
-   * to eliminate robotic cadence, and waits for voiceschanged on Android where voices load asynchronously.
+   * Prioritizes Paraguayan/Latin American Spanish, lower pitch and lower speed
+   * to eliminate robotic cadence, and waits for voiceschanged when voices load asynchronously.
    */
   public static speak(
     text: string,
@@ -451,31 +480,37 @@ export class VoiceAssistantService {
 
     let cancelled = false;
 
-    // Use es-419 as preferred language code for Spanish recommendations
     const isPortuguese = typeof lang === 'string' && (lang === 'pt-BR' || lang.startsWith('pt'));
-    const targetLang = isPortuguese ? 'pt-BR' : 'es-419';
 
     const playUtterance = (voices: SpeechSynthesisVoice[]) => {
       if (cancelled) return;
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = targetLang;
 
-      const selection = this.selectMaleVoice(targetLang, voices);
+      const selection = this.selectMaleVoice(lang, voices);
       if (selection.voice) {
         utterance.voice = selection.voice;
+        utterance.lang = selection.voice.lang;
+        console.info(
+          `Don Mateo TTS usando voz: ${selection.voice.name} (${selection.voice.lang})`,
+          selection.isExplicitMale ? 'masculina_detectada' : selection.isFemaleFallback ? 'fallback_feminino_baritono' : 'voz_neutra'
+        );
+      } else {
+        // Universal BCP-47 locale recognized by all major browser TTS engines
+        utterance.lang = isPortuguese ? 'pt-BR' : 'es-ES';
+        console.info(`Don Mateo TTS usando síntese padrão do navegador para idioma: ${utterance.lang}`);
       }
 
       // Organic acoustic tuning for Don Mateo:
-      // Lower pitch (0.82) and lower speed (0.88) removes robotic artifacts and creates a warm, natural agricultural advisor voice
+      // Lower pitch (0.78-0.84) and lower speed (0.88) removes robotic artifacts and creates a warm, natural agricultural advisor voice
       if (selection.isFemaleFallback) {
-        utterance.pitch = 0.65;
-        utterance.rate = 0.85;
+        utterance.pitch = 0.78; // Warm baritone transposition
+        utterance.rate = 0.88;
       } else if (selection.isExplicitMale) {
-        utterance.pitch = 0.82;
+        utterance.pitch = 0.84;
         utterance.rate = 0.88;
       } else {
-        utterance.pitch = 0.76;
+        utterance.pitch = 0.80;
         utterance.rate = 0.88;
       }
 
@@ -498,12 +533,19 @@ export class VoiceAssistantService {
       window.speechSynthesis.speak(utterance);
     };
 
-    // Check if voices are loaded; if empty (typical on Android), wait for voiceschanged before speaking
+    // Check if voices are loaded; if empty or missing voices in target language, wait for voiceschanged
     const loaded = this.getLoadedVoices();
-    if (loaded.length > 0) {
+    const prefix = isPortuguese ? 'pt' : 'es';
+    const hasTargetVoice = loaded.some((v) => {
+      const vl = (v.lang || '').toLowerCase().replace('_', '-');
+      const name = (v.name || '').toLowerCase();
+      return vl.startsWith(prefix) || (prefix === 'es' && (name.includes('español') || name.includes('spanish')));
+    });
+
+    if (loaded.length > 0 && hasTargetVoice) {
       playUtterance(loaded);
     } else {
-      this.waitForVoices(800).then((voices) => {
+      this.waitForVoices(1000).then((voices) => {
         playUtterance(voices);
       });
     }

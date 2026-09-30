@@ -23,10 +23,10 @@ test('rejeita vozes femininas conhecidas no filtro de seleção', () => {
   const femaleVoices = [
     createMockVoice('Microsoft Maria - Portuguese (Brazil)', 'pt-BR'),
     createMockVoice('Microsoft Francisca Online (Natural) - Portuguese (Brazil)', 'pt-BR'),
-    createMockVoice('Google português do Brasil', 'pt-BR'),
+    createMockVoice('Google português do Brasil (pt-br-x-afy)', 'pt-BR'),
     createMockVoice('Microsoft Sabina - Spanish (Mexico)', 'es-MX'),
     createMockVoice('Microsoft Helena - Spanish (Spain)', 'es-ES'),
-    createMockVoice('Google español', 'es-ES'),
+    createMockVoice('Google español (es-es-x-ana)', 'es-ES'),
     createMockVoice('pt-br-x-afy-network', 'pt-BR'),
     createMockVoice('es-us-x-sfb-network', 'es-US')
   ];
@@ -112,17 +112,20 @@ test('seleciona Mateo / Alonso / Jorge em espanhol latino para Don Mateo', () =>
   assert.equal(result.isFemaleFallback, false);
 });
 
-test('prioriza voz masculina bilíngue de idioma irmão em vez de voz feminina local', () => {
+test('garante que a voz permaneça em espanhol quando solicitado es-PY, nunca trocando para português', () => {
   const candidateVoices = [
-    createMockVoice('Microsoft Maria - Portuguese (Brazil)', 'pt-BR'),
-    createMockVoice('Microsoft Alonso Online (Natural) - Spanish (United States)', 'es-US')
+    createMockVoice('Microsoft Helena - Spanish (Spain)', 'es-ES'),
+    createMockVoice('Microsoft Daniel - Portuguese (Brazil)', 'pt-BR')
   ];
 
-  const result = VoiceAssistantService.selectMaleVoice('pt-BR', candidateVoices);
-  assert.ok(result.voice, 'Deve encontrar uma voz');
-  assert.equal(result.voice?.name, 'Microsoft Alonso Online (Natural) - Spanish (United States)');
-  assert.equal(result.isExplicitMale, true);
-  assert.equal(result.isFemaleFallback, false);
+  const result = VoiceAssistantService.selectMaleVoice('es-PY', candidateVoices);
+  assert.ok(result.voice, 'Deve encontrar uma voz em espanhol');
+  assert.equal(
+    result.voice?.name,
+    'Microsoft Helena - Spanish (Spain)',
+    'Deve selecionar Helena em espanhol com modulação barítona em vez de trocar para voz em português'
+  );
+  assert.equal(result.isFemaleFallback, true, 'Deve sinalizar fallback feminino para modulação barítona');
 });
 
 test('sinaliza fallback feminino para modulação barítona (0.65) quando não há voz masculina instalada', () => {

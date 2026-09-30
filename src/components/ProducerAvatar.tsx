@@ -141,7 +141,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     setAvatarState('speaking');
     VoiceAssistantService.speak(
       text,
-      isPt ? 'pt-BR' : 'es-419',
+      lang,
       () => setAvatarState('speaking'),
       () => setAvatarState('idle')
     );

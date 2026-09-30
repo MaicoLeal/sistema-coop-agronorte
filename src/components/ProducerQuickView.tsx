@@ -361,7 +361,9 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       StorageService.updateIntervention(updated, currentUser);
       setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
 
-      const successTxt = `¡Apunte técnico actualizado exitosamente!`;
+      const successTxt = isPt
+        ? 'Apontamento técnico atualizado com sucesso!'
+        : '¡Apunte técnico actualizado exitosamente!';
       setManualSuccessMessage(successTxt);
       VoiceAssistantService.speak(successTxt, lang);
 
@@ -423,7 +425,9 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
     StorageService.addIntervention(newIntervention, currentUser);
     setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
 
-    const successTxt = `¡Apunte técnico guardado con éxito para ${currentZone.name}! (${productOrActionFinal})`;
+    const successTxt = isPt
+      ? `Apontamento técnico guardado com sucesso para ${currentZone.name}! (${productOrActionFinal})`
+      : `¡Apunte técnico guardado con éxito para ${currentZone.name}! (${productOrActionFinal})`;
     setManualSuccessMessage(successTxt);
     VoiceAssistantService.speak(successTxt, lang);
 
@@ -478,8 +482,12 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
     StorageService.addIntervention(harvestIntervention, currentUser);
     setInterventions(StorageService.getBatchInterventions(currentBatch.id, currentZone.id));
 
-    const cropName = selectedCrop === 'tomate' ? 'Tomate' : 'Locote';
-    const successTxt = `¡Cosecha registrada! ${boxCount} cajas (${totalKg} kg) de ${cropName}.`;
+    const cropName = selectedCrop === 'tomate'
+      ? 'Tomate'
+      : (isPt ? 'Pimentão' : 'Locote');
+    const successTxt = isPt
+      ? `Colheita registrada! ${boxCount} caixas (${totalKg} kg) de ${cropName}.`
+      : `¡Cosecha registrada! ${boxCount} cajas (${totalKg} kg) de ${cropName}.`;
     setHarvestSuccessMessage(successTxt);
     VoiceAssistantService.speak(successTxt, lang);
 
