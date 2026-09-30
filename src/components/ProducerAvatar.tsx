@@ -82,7 +82,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
   useEffect(() => {
     const initialGreeting = isPt
       ? 'Olá, parceiro produtor! Sou o Don Mateo, seu consultor agronômico aqui da Cooperativa Agronorte. Acompanho suas estufas de tomate e pimentão de perto. Como posso te orientar no manejo hoje?'
-      : '¡Hola, amigo productor! Soy Don Mateo, tu asesor agronómico de la Cooperativa Agronorte. Acompaño tus invernaderos de tomate y locote de cerca. ¿En qué te puedo orientar hoy con tu cultivo?';
+      : 'Hola, amigo productor. Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?';
 
     setMessages([
       {
@@ -297,7 +297,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
               speakText(
                 isPt
                   ? 'Olá, parceiro produtor! Sou o Don Mateo, seu consultor agronômico aqui da Cooperativa Agronorte. Nossas estufas estão monitoradas em tempo real. Como posso te orientar no manejo hoje?'
-                  : '¡Hola, amigo productor! Soy Don Mateo, tu asesor agronómico de la Cooperativa Agronorte. Nuestros invernaderos están monitoreados en tiempo real. ¿En qué te puedo orientar hoy con tu cultivo?'
+                  : 'Hola, amigo productor. Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?'
               );
             }}
             className="cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 focus:outline-hidden bg-transparent border-0 p-0"

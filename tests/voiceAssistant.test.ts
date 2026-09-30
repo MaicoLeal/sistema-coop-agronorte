@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   VoiceAssistantService,
+  STUDIO_AUDIO_REGISTRY,
   FEMALE_VOICE_KEYWORDS,
   PT_MALE_KEYWORDS,
   ES_MALE_KEYWORDS,
@@ -158,3 +159,12 @@ test('ES_LATAM_LOCALES inclui es-419 e os principais países da América Latina'
   assert.ok(ES_LATAM_LOCALES.includes('es-ar'));
   assert.ok(ES_LATAM_LOCALES.includes('es-co'));
 });
+
+test('STUDIO_AUDIO_REGISTRY registra clipe oficial ElevenLabs para saudação do Don Mateo em espanhol', () => {
+  const greetingClip = STUDIO_AUDIO_REGISTRY.find((c) => c.id === 'greeting_es');
+  assert.ok(greetingClip, 'Deve conter o clipe de saudação registrado');
+  assert.equal(greetingClip?.url, '/assets/don-mateo/don-mateo-greeting-es.mp3');
+  assert.ok(greetingClip?.transcriptEs.includes('Don Mateo'));
+  assert.ok(greetingClip?.transcriptEs.includes('Coop Agronorte'));
+});
+

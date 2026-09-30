@@ -189,6 +189,29 @@ export const ES_MALE_KEYWORDS = [
   'natural male'
 ];
 
+export interface StudioAudioClip {
+  id: string;
+  url: string;
+  transcriptEs: string;
+  keywords: string[];
+}
+
+export const STUDIO_AUDIO_REGISTRY: StudioAudioClip[] = [
+  {
+    id: 'greeting_es',
+    url: '/assets/don-mateo/don-mateo-greeting-es.mp3',
+    transcriptEs:
+      'Hola, amigo productor. Soy Don Mateo, tu asistente técnico de la Coop Agronorte. Estoy cuidando tus invernaderos y listo para ayudarte. ¿Qué te gustaría consultar o hacer hoy?',
+    keywords: [
+      'hola amigo productor',
+      'asistente tecnico',
+      'coop agronorte',
+      'cuidando tus invernaderos',
+      'asesor agronomico de la cooperativa agronorte'
+    ]
+  }
+];
+
 export interface VoiceSelectionResult {
   voice: SpeechSynthesisVoice | null;
   isExplicitMale: boolean;
@@ -197,6 +220,7 @@ export interface VoiceSelectionResult {
 
 export class VoiceAssistantService {
   private static activeUtterance: SpeechSynthesisUtterance | null = null;
+  private static activeAudioElement: HTMLAudioElement | null = null;
   private static cachedVoices: SpeechSynthesisVoice[] = [];
   private static initialized = false;
 
@@ -460,9 +484,74 @@ export class VoiceAssistantService {
   }
 
   /**
+   * Plays a pre-recorded high-fidelity ElevenLabs studio audio clip using HTML5 Audio
+   */
+  public static playStudioAudio(
+    url: string,
+    onStart?: () => void,
+    onEnd?: () => void
+  ): { stop: () => void } {
+    if (typeof window === 'undefined') {
+      return { stop: () => {} };
+    }
+
+    this.stop();
+
+    try {
+      const audio = new Audio(url);
+      this.activeAudioElement = audio;
+
+      let ended = false;
+      const finish = () => {
+        if (!ended) {
+          ended = true;
+          if (this.activeAudioElement === audio) {
+            this.activeAudioElement = null;
+          }
+          if (onEnd) onEnd();
+        }
+      };
+
+      audio.onplay = () => {
+        if (onStart) onStart();
+      };
+
+      audio.onended = finish;
+      audio.onerror = (e) => {
+        console.warn('Erro ao reproduzir áudio studio do ElevenLabs:', e);
+        finish();
+      };
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Reprodução do áudio studio bloqueada ou falhou:', err);
+          finish();
+        });
+      }
+
+      return {
+        stop: () => {
+          try {
+            audio.pause();
+            audio.currentTime = 0;
+          } catch (e) {
+            // ignore
+          }
+          finish();
+        }
+      };
+    } catch (e) {
+      console.warn('Falha ao instanciar elemento de áudio studio:', e);
+      if (onEnd) onEnd();
+      return { stop: () => {} };
+    }
+  }
+
+  /**
    * Speaks the provided text using a human-like warm male tone.
-   * Prioritizes Paraguayan/Latin American Spanish, lower pitch and lower speed
-   * to eliminate robotic cadence, and waits for voiceschanged when voices load asynchronously.
+   * Plays pre-recorded studio ElevenLabs clips when available, or synthesizes using
+   * Paraguayan/Latin American Spanish with lower pitch to eliminate robotic cadence.
    */
   public static speak(
     text: string,
@@ -470,6 +559,47 @@ export class VoiceAssistantService {
     onStart?: () => void,
     onEnd?: () => void
   ): { stop: () => void } {
+    const isPortuguese = typeof lang === 'string' && (lang === 'pt-BR' || lang.startsWith('pt'));
+
+    // 1. Check if there is a studio-quality ElevenLabs recording registered for this phrase
+    if (!isPortuguese && typeof window !== 'undefined') {
+      const normalizedInput = text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+
+      const matchedClip = STUDIO_AUDIO_REGISTRY.find((clip) => {
+        const normTranscript = clip.transcriptEs
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
+
+        if (
+          normalizedInput === normTranscript ||
+          normalizedInput.includes(normTranscript) ||
+          normTranscript.includes(normalizedInput)
+        ) {
+          return true;
+        }
+
+        return clip.keywords.some((kw) => {
+          const normKw = kw
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+          return normalizedInput.includes(normKw);
+        });
+      });
+
+      if (matchedClip) {
+        console.info(`[Don Mateo Studio Audio] Reproduzindo áudio ElevenLabs: ${matchedClip.id}`);
+        return this.playStudioAudio(matchedClip.url, onStart, onEnd);
+      }
+    }
+
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       console.warn('Síntese de voz não suportada neste navegador.');
       return { stop: () => {} };
@@ -479,8 +609,6 @@ export class VoiceAssistantService {
     this.stop();
 
     let cancelled = false;
-
-    const isPortuguese = typeof lang === 'string' && (lang === 'pt-BR' || lang.startsWith('pt'));
 
     const playUtterance = (voices: SpeechSynthesisVoice[]) => {
       if (cancelled) return;
@@ -577,24 +705,35 @@ export class VoiceAssistantService {
   }
 
   /**
-   * Stops any currently playing speech
+   * Stops any currently playing speech or studio audio
    */
   public static stop(onEnd?: () => void): void {
+    if (this.activeAudioElement) {
+      try {
+        this.activeAudioElement.pause();
+        this.activeAudioElement.currentTime = 0;
+      } catch (e) {
+        // ignore
+      }
+      this.activeAudioElement = null;
+    }
+
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       this.activeUtterance = null;
-      if (onEnd) onEnd();
     }
+
+    if (onEnd) onEnd();
   }
 
   /**
-   * Checks if browser speech synthesis is currently active
+   * Checks if audio or speech synthesis is currently active
    */
   public static isSpeaking(): boolean {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      return false;
-    }
-    return window.speechSynthesis.speaking;
+    const isAudioPlaying = Boolean(this.activeAudioElement && !this.activeAudioElement.paused);
+    const isSynthSpeaking =
+      typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking;
+    return isAudioPlaying || isSynthSpeaking;
   }
 
   /**
