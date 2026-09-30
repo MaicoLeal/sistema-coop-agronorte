@@ -201,6 +201,7 @@ export default function App() {
         <Header
           lang={lang}
           currentUser={currentUser}
+          activeTab={activeTab}
           activeZone={zones.find((z) => z.id === selectedZoneId) || zones[0]}
           viewMode={viewMode}
           onToggleViewMode={() => setViewMode((prev) => (prev === 'producer_easy' ? 'expert_management' : 'producer_easy'))}
