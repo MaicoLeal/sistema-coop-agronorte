@@ -1,5 +1,6 @@
 import React from 'react';
 import { Language, UserProfile, ProductionZone } from '../types';
+import { WeatherWidget } from './WeatherWidget';
 import {
   Sprout,
   RotateCw,
@@ -169,8 +170,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* ─── LADO DIREITO: Status Unificado, Ações e Perfil ─── */}
+      {/* ─── LADO DIREITO: Clima em Tempo Real, Status Unificado, Ações e Perfil ─── */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Previsão do Tempo e Alertas Climáticos (Chuva, Vento, Sol Forte) */}
+        <WeatherWidget lang={lang} />
+
         {/* Status IoT e Automação Unificado (Limpo e profissional) */}
         <div className="hidden md:flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary px-3 py-1 rounded-full text-xs font-medium">
           <span className="relative flex h-2 w-2">

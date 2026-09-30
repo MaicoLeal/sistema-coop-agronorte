@@ -14,6 +14,7 @@ import { StorageService } from '../services/storageService';
 import { VoiceAssistantService } from '../services/voiceAssistantService';
 import { BatchCertificateModal } from './BatchCertificateModal';
 import { MobileTab } from './MobileBottomNav';
+import { WeatherAlertCard } from './WeatherAlertCard';
 import {
   Sprout,
   Camera,
@@ -693,6 +694,9 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Previsão do Tempo em Tempo Real e Alertas Climáticos para as Estufas */}
+      <WeatherAlertCard lang={lang} />
 
       {/* =========================================================
           3. SELECTOR DE CULTIVO & INVERNADEROS (DESKTOP)

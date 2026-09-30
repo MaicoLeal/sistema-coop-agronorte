@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { translations } from '../i18n/translations';
 import { AIDiagnosisService } from '../services/aiDiagnosisService';
+import { WeatherAlertCard } from './WeatherAlertCard';
 import {
   FileText,
   Cloud,
@@ -197,6 +198,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Previsão do Tempo em Tempo Real e Alertas de Proteção de Estufa */}
+      <WeatherAlertCard lang={lang} />
 
       {/* Cultivar Quick Filter Switcher */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
