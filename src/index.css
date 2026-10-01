@@ -64,4 +64,56 @@ body,
 /* Landing page styles */
 @import "./components/AnimatedLandingPage.css";
 
+/* Shared operational interface: one type family and quiet, neutral surfaces. */
+.app-shell {
+  --color-background: #f6f7f6;
+  --color-surface: #ffffff;
+  --color-surface-container-low: #f6f7f6;
+  --color-surface-container: #f0f3f0;
+  --color-surface-container-high: #e9eeea;
+  --color-surface-container-highest: #e3e9e4;
+  --color-outline-variant: #d8e0da;
+  --font-sans: 'Hanken Grotesk', system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+
+.app-shell :is(.font-mono, .font-display, .font-sans) {
+  font-family: var(--font-sans);
+}
+
+.app-shell :is(h1, h2, h3, p, label, button, summary) {
+  overflow-wrap: anywhere;
+}
+
+.app-shell :is(button, input, select, textarea) {
+  max-width: 100%;
+}
+
+.app-shell button {
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.app-shell .grid > * {
+  min-width: 0;
+}
+
+.app-shell :is(input, select, textarea):focus-visible,
+.app-shell button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .app-shell :is(input, select, textarea) { font-size: 16px; }
+  .app-shell main { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *, .app-shell *::before, .app-shell *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 

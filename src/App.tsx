@@ -165,7 +165,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-on-surface flex flex-col font-sans selection:bg-primary selection:text-on-primary antialiased">
+    <div className="app-shell min-h-screen bg-background text-on-surface flex flex-col font-sans selection:bg-primary selection:text-on-primary antialiased">
       {/* Fixed Left Sidebar Navigation */}
       <Sidebar
         lang={lang}
@@ -196,7 +196,7 @@ export default function App() {
       />
 
       {/* Main Viewport (Offset by 72 on lg screens) */}
-      <div className="lg:pl-72 flex flex-col min-h-screen">
+      <div className="lg:pl-72 flex flex-col min-h-screen min-w-0">
         {/* Top Header Bar */}
         <Header
           lang={lang}
@@ -220,7 +220,7 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 w-full pt-18 sm:pt-20 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12">
+        <main className="flex-1 w-full min-w-0 pt-18 sm:pt-20 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12">
           {viewMode === 'producer_easy' ? (
             <ProducerQuickView
               lang={lang}

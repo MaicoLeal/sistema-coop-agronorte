@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Language,
   UserProfile,
@@ -573,19 +573,19 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       <div className="md:hidden space-y-2">
         {/* Barra superior única: Cultivo activo + Estado + Selector de Invernadero */}
         <div className="bg-surface-container-lowest rounded-2xl p-3 shadow-sm border border-outline-variant/30">
-          <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="flex flex-col items-stretch gap-3 mb-3">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-xl shrink-0">{selectedCrop === 'tomate' ? '🍅' : '🫑'}</span>
               <div className="min-w-0">
                 <p className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider leading-none">
                   Coop Agronorte
                 </p>
-                <div className="relative inline-block max-w-[200px]">
+                <div className="relative block max-w-full">
                   <select
                     aria-label="Seleccionar Invernadero"
                     value={currentZone.id}
                     onChange={(e) => handleZoneChange(e.target.value)}
-                    className="appearance-none text-sm font-black text-on-surface bg-transparent pr-5 truncate focus:outline-none cursor-pointer leading-tight"
+                    className="appearance-none w-full min-w-0 text-sm font-semibold text-on-surface bg-transparent pr-5 truncate focus:outline-none cursor-pointer leading-tight"
                   >
                     {cropZones.map((z) => (
                       <option key={z.id} value={z.id} className="text-black dark:text-white">
@@ -611,13 +611,13 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               onClick={() => handleCropChange('tomate')}
               className={`min-h-[40px] py-1.5 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 selectedCrop === 'tomate'
-                  ? 'bg-red-600 text-white shadow-sm'
+                  ? 'bg-surface text-primary shadow-sm ring-1 ring-outline-variant/30'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               <span>🍅</span>
               <span>Tomate</span>
-              <span className="text-[10px] opacity-70 font-mono bg-black/15 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] opacity-70 font-sans bg-primary/5 px-1.5 py-0.5 rounded-full">
                 {zones.filter((z) => z.cropType === 'tomate').length}
               </span>
             </button>
@@ -627,13 +627,13 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               onClick={() => handleCropChange('locote')}
               className={`min-h-[40px] py-1.5 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 selectedCrop === 'locote'
-                  ? 'bg-emerald-700 text-white shadow-sm'
+                  ? 'bg-surface text-primary shadow-sm ring-1 ring-outline-variant/30'
                   : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
               <span>🫑</span>
               <span>{lang === 'pt-BR' ? 'Pimentão' : 'Locote'}</span>
-              <span className="text-[10px] opacity-70 font-mono bg-black/15 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] opacity-70 font-sans bg-primary/5 px-1.5 py-0.5 rounded-full">
                 {zones.filter((z) => z.cropType === 'locote').length}
               </span>
             </button>
@@ -644,12 +644,12 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       {/* =========================================================
           2. BANNER HERO PARA DESKTOP (Oculto en Móvil)
          ========================================================= */}
-      <div className="hidden md:block bg-linear-to-r from-emerald-800 via-primary to-emerald-950 rounded-3xl p-6 lg:p-7 text-white shadow-xl border-2 border-emerald-500/20 relative overflow-hidden">
+      <div className="hidden md:block bg-surface rounded-2xl p-6 lg:p-7 text-on-surface shadow-sm border border-outline-variant/30 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 opacity-10 pointer-events-none flex items-center pr-6">
           <Sprout className="w-64 h-64 text-white" />
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="h-16 lg:h-18 px-3 py-2 rounded-2xl bg-white flex items-center justify-center shadow-lg shrink-0">
               <img
@@ -661,17 +661,17 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
             <div>
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="bg-emerald-500/30 text-emerald-100 text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400/40">
+                <span className="bg-primary/5 text-primary text-xs font-bold px-3 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400/40">
                   Modo Productor • Trazabilidad
                 </span>
-                <span className="text-xs text-emerald-100/90 font-semibold">
+                <span className="text-xs text-on-surface-variant font-semibold">
                   350+ Familias Conectadas • Guayaibí, San Pedro
                 </span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-black tracking-tight">
+              <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight">
                 Monitoreo de Invernaderos y Trazabilidad
               </h1>
-              <p className="text-sm text-emerald-100/90 mt-1 max-w-xl">
+              <p className="text-sm text-on-surface-variant mt-1 max-w-xl">
                 Control de sensores, sanidad e historial de cultivo para emisión de certificado oficial.
               </p>
             </div>
@@ -689,7 +689,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
             <button
               onClick={onSwitchToExpert}
-              className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 rounded-full bg-primary/5 hover:bg-primary/10 text-primary font-semibold text-xs sm:text-sm transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer"
             >
               <Layers className="w-4 h-4" />
               <span>{t.switchToExpertMode}</span>
@@ -712,7 +712,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       {/* =========================================================
           3. SELECTOR DE CULTIVO & INVERNADEROS (DESKTOP)
          ========================================================= */}
-      <div className="hidden md:flex bg-surface-container-lowest rounded-3xl p-3 sm:p-4 shadow-sm border border-outline-variant/30 flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="hidden md:flex bg-surface-container-lowest rounded-3xl p-3 sm:p-4 shadow-sm border border-outline-variant/30 flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider px-2 shrink-0">
             Cultivo Activo:
@@ -721,15 +721,15 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <button
               type="button"
               onClick={() => handleCropChange('tomate')}
-              className={`px-5 py-2.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer ${
+              className={`px-5 py-2.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer ${
                 selectedCrop === 'tomate'
-                  ? 'bg-red-600 text-white shadow-md scale-102 ring-2 ring-red-400'
+                  ? 'bg-primary/5 text-primary border border-primary/20'
                   : 'bg-surface-container-high hover:bg-surface-container text-on-surface-variant'
               }`}
             >
               <span className="text-lg">🍅</span>
               <span>TOMATE</span>
-              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
+              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-sans">
                 {zones.filter((z) => z.cropType === 'tomate').length} Invernaderos
               </span>
             </button>
@@ -737,15 +737,15 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <button
               type="button"
               onClick={() => handleCropChange('locote')}
-              className={`px-5 py-2.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer ${
+              className={`px-5 py-2.5 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer ${
                 selectedCrop === 'locote'
-                  ? 'bg-emerald-700 text-white shadow-md scale-102 ring-2 ring-emerald-400'
+                  ? 'bg-primary/5 text-primary border border-primary/20'
                   : 'bg-surface-container-high hover:bg-surface-container text-on-surface-variant'
               }`}
             >
               <span className="text-lg">🫑</span>
               <span>{lang === 'pt-BR' ? 'PIMENTÃO VERDE' : 'LOCOTE VERDE'}</span>
-              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
+              <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-sans">
                 {zones.filter((z) => z.cropType === 'locote').length} {lang === 'pt-BR' ? 'Estufas' : 'Invernaderos'}
               </span>
             </button>
@@ -755,7 +755,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         <button
           type="button"
           onClick={() => setShowCertificateModal(true)}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer border border-amber-300"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-linear-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 cursor-pointer border border-amber-300"
         >
           <Award className="w-4 h-4 text-slate-950" />
           <span>📄 Emitir Certificado Oficial del Lote</span>
@@ -777,7 +777,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               }`}
             >
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold ${
                   isSelected ? 'bg-white text-primary' : 'bg-surface-container-high text-on-surface'
                 }`}
               >
@@ -785,7 +785,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               </span>
               <span>{z.name}</span>
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded font-mono uppercase ${
+                className={`text-[10px] px-1.5 py-0.2 rounded font-sans uppercase ${
                   isSelected
                     ? 'bg-white/25 text-white'
                     : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
@@ -817,7 +817,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 • {currentZone.name}
               </span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-400/30">
+            <span className="text-[10px] font-sans text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-400/30">
               {currentBatch?.batchCode || 'TOM-2026-088'}
             </span>
           </div>
@@ -830,7 +830,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">pH Solução</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                <span className="text-3xl font-semibold font-sans text-on-surface leading-none">
                   {targets.phCurrent}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
@@ -849,7 +849,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">CE Adubo</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                <span className="text-3xl font-semibold font-sans text-on-surface leading-none">
                   {targets.ecCurrent}
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
@@ -868,7 +868,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Temperatura</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                <span className="text-3xl font-semibold font-sans text-on-surface leading-none">
                   {targets.tempCurrent}°
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
@@ -887,7 +887,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">Humedad</span>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                <span className="text-3xl font-semibold font-sans text-on-surface leading-none">
                   {targets.humidityCurrent}%
                 </span>
                 <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
@@ -1008,8 +1008,8 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         <div className="bg-surface-container-lowest rounded-2xl px-4 py-3 shadow-sm border border-outline-variant/30 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-black text-on-surface">{currentZone.name}</h2>
-              <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
+              <h2 className="text-sm font-semibold text-on-surface">{currentZone.name}</h2>
+              <span className="text-[10px] font-sans font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
                 {currentBatch?.batchCode || 'TOM-2026-088'}
               </span>
             </div>
@@ -1056,7 +1056,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">pH Solução</span>
                   <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.phCurrent}</div>
+                <div className="text-3xl font-semibold font-sans text-on-surface mb-1">{targets.phCurrent}</div>
                 <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
                   Meta: {targets.phMin} – {targets.phMax} ✓
                 </div>
@@ -1069,7 +1069,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">CE Adubo</span>
                   <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.ecCurrent}</div>
+                <div className="text-3xl font-semibold font-sans text-on-surface mb-1">{targets.ecCurrent}</div>
                 <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
                   Meta: {targets.ecMin} – {targets.ecMax} mS ✓
                 </div>
@@ -1082,7 +1082,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Temperatura</span>
                   <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.tempCurrent}°</div>
+                <div className="text-3xl font-semibold font-sans text-on-surface mb-1">{targets.tempCurrent}°</div>
                 <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
                   Meta: {targets.tempMin} – {targets.tempMax} °C ✓
                 </div>
@@ -1095,7 +1095,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">Humedad</span>
                   <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.humidityCurrent}%</div>
+                <div className="text-3xl font-semibold font-sans text-on-surface mb-1">{targets.humidityCurrent}%</div>
                 <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
                   Rango: 65% – 80% UR ✓
                 </div>
@@ -1167,14 +1167,14 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <div className="w-12 h-12 rounded-2xl bg-secondary-container text-on-secondary-container mx-auto flex items-center justify-center shadow-xs mb-2">
                     <Package className="w-6 h-6 text-secondary" />
                   </div>
-                  <h2 className="text-xl font-black text-on-surface">
+                  <h2 className="text-xl font-semibold text-on-surface">
                     Registrar cosecha
                   </h2>
                   <p className="text-xs text-on-surface-variant mt-0.5">
                     Cargue las cajas cosechadas hoy en {currentZone.name}
                   </p>
                   <div className="mt-2 inline-block">
-                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-bold px-3 py-1 rounded-full border border-emerald-400/40">
+                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-sans font-bold px-3 py-1 rounded-full border border-emerald-400/40">
                       Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
                     </span>
                   </div>
@@ -1201,7 +1201,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                         <Minus className="w-6 h-6" />
                       </button>
                       <div className="w-28 text-center">
-                        <span className="text-5xl font-black text-primary font-mono block">
+                        <span className="text-5xl font-semibold text-primary font-sans block">
                           {boxCount}
                         </span>
                         <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
@@ -1221,7 +1221,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     {/* Total Estimado */}
                     <div className="bg-primary/10 rounded-2xl p-3.5 flex items-center justify-between border border-primary/20">
                       <span className="text-sm font-semibold text-on-surface">Total estimado:</span>
-                      <span className="text-2xl font-black text-primary font-mono">
+                      <span className="text-2xl font-semibold text-primary font-sans">
                         {boxCount * estimatedKgPerBox} kg
                       </span>
                     </div>
@@ -1246,7 +1246,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     <Scale className="w-5 h-5 text-secondary" />
                     <h3 className="font-bold text-sm text-on-surface">Lotes Cosechados</h3>
                   </div>
-                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">
+                  <span className="text-xs font-sans font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">
                     {harvests.reduce((acc, h) => acc + h.unitsCount, 0)} cajas totales
                   </span>
                 </div>
@@ -1266,17 +1266,17 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                         >
                           <div className="space-y-0.5 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-mono font-bold text-xs text-on-surface">{h.harvestCode}</span>
+                              <span className="font-sans font-bold text-xs text-on-surface">{h.harvestCode}</span>
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                                 {h.qualityGrade}
                               </span>
                             </div>
-                            <p className="text-[11px] text-on-surface-variant font-mono">{hDate}</p>
+                            <p className="text-[11px] text-on-surface-variant font-sans">{hDate}</p>
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <div className="text-right font-mono">
-                              <span className="text-sm font-black text-primary block">{h.netWeightKg.toFixed(1)} kg</span>
+                            <div className="text-right font-sans">
+                              <span className="text-sm font-semibold text-primary block">{h.netWeightKg.toFixed(1)} kg</span>
                               <span className="text-[10px] text-on-surface-variant font-bold">{h.unitsCount} cajas</span>
                             </div>
                             <div className="flex flex-col gap-1">
@@ -1313,7 +1313,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               <FilePenLine className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base font-black text-on-surface">Cargar Apunte Técnico</h3>
+              <h3 className="text-base font-semibold text-on-surface">Cargar Apunte Técnico</h3>
               <p className="text-xs text-on-surface-variant mt-1">
                 Registre nutrición (pH/CE), sanidad fitosanitaria o manejo cultural
               </p>
@@ -1356,10 +1356,10 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-black text-on-surface">
+                    <h3 className="text-base sm:text-lg font-semibold text-on-surface">
                       Historial de la planta
                     </h3>
-                    <span className="text-[11px] bg-primary text-on-primary font-mono font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] bg-primary text-on-primary font-sans font-bold px-2 py-0.5 rounded-full">
                       {filteredInterventions.length} registros
                     </span>
                   </div>
@@ -1445,7 +1445,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.2 rounded-full bg-white/80 dark:bg-black/40 ${typeConfig.text}`}>
                               {typeConfig.badge}
                             </span>
-                            <span className="text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+                            <span className="text-[11px] font-sans text-on-surface-variant flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
                               {dateStr} • {timeStr}
                             </span>
@@ -1518,7 +1518,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           {item.volumeLiters !== undefined && (
                             <div>
                               <span className="text-on-surface-variant block text-[10px] font-bold">VOLUMEN SOLUCIÓN:</span>
-                              <span className="font-semibold text-on-surface font-mono">{item.volumeLiters} Litros</span>
+                              <span className="font-semibold text-on-surface font-sans">{item.volumeLiters} Litros</span>
                             </div>
                           )}
                           {item.targetPestOrDisease && (
@@ -1530,7 +1530,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           {item.senaveRegistry && (
                             <div>
                               <span className="text-on-surface-variant block text-[10px] font-bold">REGISTRO SENAVE:</span>
-                              <span className="font-semibold text-on-surface font-mono">{item.senaveRegistry}</span>
+                              <span className="font-semibold text-on-surface font-sans">{item.senaveRegistry}</span>
                             </div>
                           )}
                           {item.coverageArea && (
@@ -1553,7 +1553,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px] font-mono text-on-surface-variant">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px] font-sans text-on-surface-variant">
                           {item.ph !== undefined && <span>pH: {item.ph}</span>}
                           {item.ec !== undefined && <span>CE: {item.ec} mS/cm</span>}
                           {item.temperature !== undefined && <span>Temp: {item.temperature}°C</span>}
@@ -1576,7 +1576,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
 
             {/* Footer del Modal */}
             <div className="p-3.5 sm:p-4 border-t border-outline-variant/30 bg-surface-container-low/60 flex items-center justify-between shrink-0">
-              <span className="text-[11px] text-on-surface-variant font-mono">
+              <span className="text-[11px] text-on-surface-variant font-sans">
                 Trazabilidad BPA • SENAVE
               </span>
               <button
@@ -1655,7 +1655,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     >
                       <Minus className="w-6 h-6" />
                     </button>
-                    <span className="text-3xl font-extrabold text-primary font-mono w-20 text-center">
+                    <span className="text-3xl font-semibold text-primary font-sans w-20 text-center">
                       {boxCount}
                     </span>
                     <button
@@ -1672,7 +1672,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   <span className="font-medium text-on-surface">
                     Total estimado (kg):
                   </span>
-                  <span className="text-lg font-extrabold text-primary font-mono">
+                  <span className="text-lg font-semibold text-primary font-sans">
                     {boxCount * estimatedKgPerBox} kg
                   </span>
                 </div>
@@ -1823,7 +1823,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           value={manualVolumeLiters}
                           onChange={(e) => setManualVolumeLiters(e.target.value)}
                           placeholder="1500"
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -1834,14 +1834,14 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           <label className="text-xs font-bold text-on-surface-variant">
                             pH Medido:
                           </label>
-                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono">Meta: 5.8-6.3</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans">Meta: 5.8-6.3</span>
                         </div>
                         <input
                           type="number"
                           step="0.05"
                           value={manualPh}
                           onChange={(e) => setManualPh(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                       <div>
@@ -1849,14 +1849,14 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           <label className="text-xs font-bold text-on-surface-variant">
                             Conductividad (mS/cm):
                           </label>
-                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono">Meta: 1.8-2.5</span>
+                          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-sans">Meta: 1.8-2.5</span>
                         </div>
                         <input
                           type="number"
                           step="0.05"
                           value={manualEc}
                           onChange={(e) => setManualEc(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -1871,7 +1871,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           step="0.5"
                           value={manualTemp}
                           onChange={(e) => setManualTemp(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                       <div>
@@ -1882,7 +1882,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           type="number"
                           value={manualHumidity}
                           onChange={(e) => setManualHumidity(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -1990,7 +1990,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           value={manualGracePeriodDays}
                           onChange={(e) => setManualGracePeriodDays(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -2004,7 +2004,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                         value={manualSenaveRegistry}
                         onChange={(e) => setManualSenaveRegistry(e.target.value)}
                         placeholder="SENAVE Cert. BIO-4412"
-                        className="w-full px-3 py-1.5 rounded-xl bg-surface border border-outline-variant/50 font-mono text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="w-full px-3 py-1.5 rounded-xl bg-surface border border-outline-variant/50 font-sans text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                       />
                     </div>
                   </div>
@@ -2064,7 +2064,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                           value={manualPlantsTreated}
                           onChange={(e) => setManualPlantsTreated(e.target.value)}
                           placeholder="4000"
-                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                          className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -2195,7 +2195,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     setEditHarvestBoxes(b);
                     setEditHarvestNetKg(b * estimatedKgPerBox);
                   }}
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -2208,7 +2208,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                   step="0.5"
                   value={editHarvestNetKg}
                   onChange={(e) => setEditHarvestNetKg(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -2236,7 +2236,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
                     step="0.5"
                     value={editHarvestCullsKg}
                     onChange={(e) => setEditHarvestCullsKg(parseFloat(e.target.value) || 0)}
-                    className="w-full px-2.5 py-2 rounded-xl bg-surface border border-outline-variant/50 font-mono text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-2.5 py-2 rounded-xl bg-surface border border-outline-variant/50 font-sans text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>

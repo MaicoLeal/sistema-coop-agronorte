@@ -392,7 +392,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
     <>
       {/* 🟢 FLOATING 3D AVATAR BUBBLE (Bottom Right) */}
       {!isOpen && !isBubbleMinimized && (
-        <div className="fixed bottom-20 sm:bottom-5 right-4 sm:right-5 z-40 flex items-end gap-2.5 select-none">
+        <div className="hidden fixed bottom-5 right-5 z-40 items-end gap-2.5 select-none">
           {/* Botón para minimizar la burbuja en móvil */}
           <button
             type="button"
@@ -408,7 +408,7 @@ export const ProducerAvatar: React.FC<ProducerAvatarProps> = ({
           </button>
           {/* Proactive Speech Bubble / Tip */}
           {hasProactiveTip && (
-            <div className="hidden sm:flex flex-col bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl shadow-2xl border-2 border-emerald-500/40 max-w-xs animate-bounce mb-2 relative backdrop-blur-md">
+            <div className="hidden sm:flex flex-col bg-surface-container-lowest text-on-surface p-3.5 rounded-2xl shadow-2xl border-2 border-emerald-500/40 max-w-xs mb-2 relative backdrop-blur-md">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />

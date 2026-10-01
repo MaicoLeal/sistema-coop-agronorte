@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-full w-72 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between overflow-hidden border-r border-outline-variant/30 select-none transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 h-dvh w-72 max-w-[calc(100vw-1rem)] bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between overflow-hidden border-r border-outline-variant/30 select-none transition-transform duration-200 lg:translate-x-0 ${
           isOpenOnMobile ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -161,10 +161,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <span className="text-[10px] font-mono text-on-surface uppercase tracking-wider font-bold block truncate">
+                <span className="text-xs font-sans text-on-surface tracking-normal font-bold block truncate">
                   COOP AGRONORTE
                 </span>
-                <span className="text-[9px] font-mono text-primary block truncate font-medium">
+                <span className="text-xs font-sans text-primary block truncate font-medium">
                   Guayaibí • Paraguay
                 </span>
               </div>
@@ -173,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Versão clicável */}
             <button
               onClick={onOpenVersionModal}
-              className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold transition-colors cursor-pointer shrink-0"
+              className="bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-sans px-1.5 py-0.5 rounded font-semibold transition-colors cursor-pointer shrink-0"
               title={lang === 'es-PY' ? 'Ver Notas de Versión' : 'Ver Notas de Versão'}
             >
               v1.2
@@ -184,11 +184,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-3 pb-2.5">
             <div className="bg-surface-container-high/80 hover:bg-surface-container-high rounded-xl p-2 border border-outline-variant/30 transition-colors">
               <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-[9px] font-mono text-on-surface-variant uppercase tracking-wider font-semibold flex items-center gap-1">
+                <span className="text-xs font-sans text-on-surface-variant tracking-normal font-semibold flex items-center gap-1">
                   <Sprout className="w-3 h-3 text-primary" />
                   <span>{lang === 'es-PY' ? 'Invernadero Activo' : 'Estufa Ativa'}</span>
                 </span>
-                <span className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.2 rounded font-semibold">
+                <span className="text-xs font-sans bg-primary/10 text-primary px-1.5 py-0.2 rounded font-semibold">
                   {currentZone?.cultivar || 'Tomates'}
                 </span>
               </div>
@@ -211,13 +211,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* ═══ CORPO ROLÁVEL: NAVEGAÇÃO OPERACIONAL AGRUPADA ═══ */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin">
           {/* Assistentes Inteligentes (Card Rápido Unificado) */}
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-2">
             {onOpenMateoChat && (
               <button
                 onClick={onOpenMateoChat}
-                className="flex items-center gap-2 p-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 text-emerald-100 border border-emerald-700/40 transition-all cursor-pointer group text-left"
+                className="flex items-center gap-2 p-2 rounded-xl bg-surface-container-lowest hover:bg-primary/5 text-on-surface border border-emerald-700/40 transition-all cursor-pointer group text-left"
                 title="Don Mateo IA"
               >
                 <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-emerald-400 shrink-0 bg-emerald-950">
@@ -228,8 +228,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </div>
                 <div className="min-w-0 flex-1 leading-none">
-                  <span className="text-[11px] font-bold block truncate">Don Mateo</span>
-                  <span className="text-[9px] text-emerald-300 font-mono">Voz IA</span>
+                  <span className="text-xs font-bold block truncate">Don Mateo</span>
+                  <span className="text-xs text-on-surface-variant font-sans">Voz IA</span>
                 </div>
               </button>
             )}
@@ -237,17 +237,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {onOpenPestDiagnosis && (
               <button
                 onClick={onOpenPestDiagnosis}
-                className="flex items-center gap-2 p-2 rounded-xl bg-secondary-container/80 hover:bg-secondary-container text-on-secondary-container border border-secondary/20 transition-all cursor-pointer group text-left"
+                className="flex items-center gap-2 p-2 rounded-xl bg-surface-container-lowest hover:bg-primary/5 text-on-surface border border-secondary/20 transition-all cursor-pointer group text-left"
                 title={lang === 'es-PY' ? 'Diagnóstico de Plagas' : 'Diagnóstico de Pragas'}
               >
                 <div className="w-6 h-6 rounded-lg bg-secondary/15 flex items-center justify-center shrink-0">
                   <Bug className="w-3.5 h-3.5 text-secondary group-hover:rotate-12 transition-transform" />
                 </div>
                 <div className="min-w-0 flex-1 leading-none">
-                  <span className="text-[11px] font-bold block truncate">
+                  <span className="text-xs font-bold block truncate">
                     {lang === 'es-PY' ? 'Plagas IA' : 'Pragas IA'}
                   </span>
-                  <span className="text-[9px] text-on-secondary-container/80 font-mono">Foto/Áudio</span>
+                  <span className="text-xs text-on-secondary-container/80 font-sans">Foto/Áudio</span>
                 </div>
               </button>
             )}
@@ -259,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             return (
               <div key={group.id} className="space-y-1">
                 <div className="px-2 pt-1 pb-0.5">
-                  <span className="text-[10px] font-mono text-outline uppercase tracking-wider font-bold block">
+                  <span className="text-xs font-sans text-outline tracking-normal font-bold block">
                     {groupTitle}
                   </span>
                 </div>
@@ -282,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-on-primary' : 'text-primary'}`} />
-                          <span className="truncate">{itemLabel}</span>
+                          <span className="min-w-0 leading-relaxed break-words">{itemLabel}</span>
                         </div>
                         {isActive && (
                           <ChevronRight className="w-3.5 h-3.5 text-on-primary/80 shrink-0" />
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between bg-surface-container rounded-lg px-2.5 py-1.5 text-xs">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="font-mono text-[11px] font-semibold text-on-surface">
+              <span className="font-sans text-xs font-semibold text-on-surface">
                 {isOnline ? 'LoRaWAN 98.4%' : 'Offline'}
               </span>
             </div>
@@ -312,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onSyncNow}
                 disabled={!isOnline || pendingSyncCount === 0}
-                className={`p-1 rounded text-[10px] font-medium transition-colors ${
+                className={`p-1 rounded text-xs font-medium transition-colors ${
                   pendingSyncCount > 0
                     ? 'bg-primary text-on-primary font-bold shadow-xs cursor-pointer animate-pulse'
                     : 'text-on-surface-variant opacity-50'
@@ -336,12 +336,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Linha com Papel / Idioma / Reset Demo */}
           <div className="flex items-center justify-between gap-1.5 pt-0.5 text-xs">
             {/* Seletor de Perfil (Role) compacto */}
-            <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-md text-[10px] flex-1 min-w-0">
+            <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-md text-xs flex-1 min-w-0">
               <UserCheck className="w-3 h-3 text-primary shrink-0" />
               <select
                 value={currentUser.role}
                 onChange={(e) => onRoleChange(e.target.value as UserRole)}
-                className="bg-transparent text-on-surface focus:outline-none cursor-pointer font-medium w-full truncate text-[10px]"
+                className="bg-transparent text-on-surface focus:outline-none cursor-pointer font-medium w-full truncate text-xs"
                 title="Alternar Papel de Acesso (RBAC)"
               >
                 <option value="quality_auditor" className="bg-surface text-on-surface">Auditor de Qualidade</option>
@@ -354,10 +354,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Alternador de Idioma */}
-            <div className="flex items-center bg-surface-container-high rounded-md p-0.5 text-[10px] font-mono shrink-0">
+            <div className="flex items-center bg-surface-container-high rounded-md p-0.5 text-xs font-sans shrink-0">
               <button
                 onClick={() => onLanguageChange('es-PY')}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all ${
                   lang === 'es-PY'
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
@@ -368,7 +368,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
               <button
                 onClick={() => onLanguageChange('pt-BR')}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                className={`px-1.5 py-0.5 rounded text-xs font-bold transition-all ${
                   lang === 'pt-BR'
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'

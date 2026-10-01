@@ -545,20 +545,20 @@ export function evaluateGreenhouseAdvice(
   const cropNameEs = isTomato ? 'Tomate Hidropónico' : 'Locote Verde';
   const cropEmoji = isTomato ? '🍅' : '🫑';
 
-  let statusTitlePt = 'Estufa em Condições Excelentes';
-  let statusTitleEs = 'Invernadero en Condiciones Excelentes';
+  let statusTitlePt = 'Manejo habitual';
+  let statusTitleEs = 'Manejo habitual';
   let statusMessagePt = `O clima hoje está equilibrado para o cultivo de ${cropNamePt.toLowerCase()}. Mantenha a rotina de manejo.`;
   let statusMessageEs = `El clima hoy está equilibrado para el cultivo de ${cropNameEs.toLowerCase()}. Mantenga el manejo habitual.`;
 
   if (overallStatus === 'critical') {
-    statusTitlePt = 'Atenção Crítica: Ajustes Imediatos na Estufa';
-    statusTitleEs = 'Atención Crítica: Ajustes Inmediatos en Invernadero';
+    statusTitlePt = 'Ajustes prioritários';
+    statusTitleEs = 'Ajustes prioritarios';
     const alertAction = actions.find((a) => a.status === 'alert');
     statusMessagePt = alertAction ? `${alertAction.instructionPt} ${alertAction.reasonPt}` : `Condições climáticas exigem proteção para o ${cropNamePt.toLowerCase()}.`;
     statusMessageEs = alertAction ? `${alertAction.instructionEs} ${alertAction.reasonEs}` : `Condiciones climáticas exigen protección para el ${cropNameEs.toLowerCase()}.`;
   } else if (overallStatus === 'attention') {
-    statusTitlePt = 'Manejo Preventivo do Dia';
-    statusTitleEs = 'Manejo Preventivo del Día';
+    statusTitlePt = 'Manejo preventivo';
+    statusTitleEs = 'Manejo preventivo';
     const warningAction = actions.find((a) => a.status === 'warning');
     statusMessagePt = warningAction ? `${warningAction.instructionPt} ${warningAction.reasonPt}` : `Acompanhe a ventilação e a fertirrigação para o ${cropNamePt.toLowerCase()}.`;
     statusMessageEs = warningAction ? `${warningAction.instructionEs} ${warningAction.reasonEs}` : `Acompañe ventilación y fertirriego para el ${cropNameEs.toLowerCase()}.`;

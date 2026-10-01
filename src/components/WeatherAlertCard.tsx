@@ -112,22 +112,22 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
   const getStatusColorClasses = (status: 'ideal' | 'attention' | 'critical') => {
     if (status === 'critical') {
       return {
-        bg: 'bg-rose-500/10 border-rose-500/40 text-rose-950 dark:text-rose-100',
-        badge: 'bg-rose-600 text-white',
+        bg: 'bg-surface border-outline-variant/30 text-on-surface',
+        badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-300',
         icon: <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />,
         ring: 'ring-rose-400/50',
       };
     }
     if (status === 'attention') {
       return {
-        bg: 'bg-amber-500/10 border-amber-500/40 text-amber-950 dark:text-amber-100',
-        badge: 'bg-amber-500 text-slate-950',
+        bg: 'bg-surface border-outline-variant/30 text-on-surface',
+        badge: 'bg-amber-500/10 text-amber-800 dark:text-amber-300',
         icon: <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />,
         ring: 'ring-amber-400/50',
       };
     }
     return {
-      bg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100',
+      bg: 'bg-surface border-outline-variant/30 text-on-surface',
       badge: 'bg-emerald-600 text-white',
       icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />,
       ring: 'ring-emerald-400/50',
@@ -146,10 +146,10 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
           </div>
           <div className="min-w-0">
             <h3 className="text-xs sm:text-sm font-bold text-on-surface truncate flex items-center gap-1.5">
-              <span>{lang === 'es-PY' ? 'Monitor de Clima en Estufa' : 'Monitor de Clima na Estufa'}</span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {lang === 'es-PY' ? 'En Vivo' : 'Tempo Real'}
+              <span>{lang === 'es-PY' ? 'Clima y manejo' : 'Clima e manejo'}</span>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-sans px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {lang === 'es-PY' ? 'Clima exterior' : 'Clima externo'}
               </span>
             </h3>
             <p className="text-[11px] text-on-surface-variant truncate">
@@ -173,10 +173,10 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
       </div>
 
       {/* ─── 2. SELETOR DE CULTIVO (TOMATE OU LOCOTE) ─── */}
-      <div className="p-3 sm:p-4 bg-surface-container-lowest border-b border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-3 sm:p-4 bg-surface-container-lowest border-b border-outline-variant/20 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
         {showCropSelector ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider shrink-0">
+            <span className="text-xs font-bold text-on-surface-variant tracking-normal shrink-0">
               {lang === 'es-PY' ? 'Cultivo en Estufa:' : 'Cultivo na Estufa:'}
             </span>
             <div className="grid grid-cols-2 gap-2 flex-1 sm:flex-initial">
@@ -185,7 +185,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                 onClick={() => handleSelectCrop('tomate')}
                 className={`min-h-[44px] px-4 py-2 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   activeCrop === 'tomate'
-                    ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-400 scale-101'
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
                     : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
                 }`}
               >
@@ -198,7 +198,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                 onClick={() => handleSelectCrop('locote')}
                 className={`min-h-[44px] px-4 py-2 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   activeCrop === 'locote'
-                    ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-400 scale-101'
+                    ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
                     : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
                 }`}
               >
@@ -209,10 +209,10 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider shrink-0">
-              {lang === 'es-PY' ? 'Estufa Calibrada:' : 'Estufa Calibrada:'}
+            <span className="text-xs font-bold text-on-surface-variant tracking-normal shrink-0">
+              {lang === 'es-PY' ? 'Cultivo' : 'Cultivo'}
             </span>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container font-extrabold text-xs sm:text-sm text-on-surface border border-outline-variant/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container font-semibold text-xs sm:text-sm text-on-surface border border-outline-variant/30">
               <span className="text-base">{advice.cropEmoji}</span>
               <span>{lang === 'es-PY' ? advice.cropNameEs : advice.cropNamePt}</span>
             </div>
@@ -225,37 +225,37 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
           onClick={handlePlayVoice}
           className={`min-h-[44px] px-4 py-2 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 ${
             isPlayingAudio
-              ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300 animate-pulse'
-              : 'bg-emerald-800 hover:bg-emerald-700 text-white'
+              ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 ring-2 ring-amber-300 animate-pulse'
+              : 'bg-primary/10 hover:bg-primary/15 text-primary border border-primary/20'
           }`}
           title={lang === 'es-PY' ? 'Escuchar recomendación de voz' : 'Ouvir recomendação por voz'}
         >
           {isPlayingAudio ? (
             <>
               <Square className="w-4 h-4 fill-current" />
-              <span>{lang === 'es-PY' ? 'Pausar Don Mateo' : 'Parar Don Mateo'}</span>
+              <span>{lang === 'es-PY' ? 'Detener audio' : 'Parar Don Mateo'}</span>
             </>
           ) : (
             <>
               <Volume2 className="w-4 h-4" />
-              <span>{lang === 'es-PY' ? 'Oír Recomendación Don Mateo' : 'Ouvir Recomendação Don Mateo'}</span>
+              <span>{lang === 'es-PY' ? 'Escuchar a Don Mateo' : 'Ouvir Don Mateo'}</span>
             </>
           )}
         </button>
       </div>
 
       {/* ─── 3. SEMÁFORO DE STATUS DO MICROCLIMA ─── */}
-      <div className={`p-4 border-b ${statusTheme.bg} flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
+      <div className={`p-4 border-b ${statusTheme.bg} flex flex-col xl:flex-row xl:items-center justify-between gap-3`}>
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-surface/80 dark:bg-black/30 shrink-0 mt-0.5 shadow-xs">
             {statusTheme.icon}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-extrabold font-sans">
+              <span className="text-sm font-semibold font-sans">
                 {lang === 'es-PY' ? advice.statusTitleEs : advice.statusTitlePt}
               </span>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${statusTheme.badge}`}>
+              <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full font-bold uppercase ${statusTheme.badge}`}>
                 {advice.overallStatus === 'ideal'
                   ? (lang === 'es-PY' ? 'Óptimo' : 'Ideal')
                   : advice.overallStatus === 'attention'
@@ -263,7 +263,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                   : (lang === 'es-PY' ? 'Acción Urgente' : 'Ação Urgente')}
               </span>
             </div>
-            <p className="text-xs mt-1 opacity-90 leading-relaxed font-medium">
+            <p className="text-sm mt-2 text-on-surface-variant leading-relaxed">
               {lang === 'es-PY' ? advice.statusMessageEs : advice.statusMessagePt}
             </p>
           </div>
@@ -273,33 +273,33 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
       {/* ─── 4. CARDS DE AÇÕES DA ESTUFA ("O QUE FAZER HOJE") ─── */}
       <div className="p-4 sm:p-5 bg-surface-container-lowest/60">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+          <span className="text-xs font-sans font-bold tracking-normal text-on-surface-variant flex items-center gap-1.5">
             <Sparkles size={14} className="text-primary" />
             <span>
               {lang === 'es-PY'
-                ? `Manejo Práctico • ${advice.cropEmoji} ${advice.cropNameEs}`
-                : `Manejo Prático • ${advice.cropEmoji} ${advice.cropNamePt}`}
+                ? 'Qué hacer hoy'
+                : 'O que fazer hoje'}
             </span>
           </span>
           <span className="text-[11px] text-on-surface-variant">
-            {lang === 'es-PY' ? '4 Pilares de la Estufa' : '4 Pilares da Estufa'}
+            {lang === 'es-PY' ? 'Recomendaciones' : 'Recomendações'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-3">
           {advice.actions.map((act) => {
             const isAlert = act.status === 'alert';
             const isWarning = act.status === 'warning';
             const badgeBg = isAlert
-              ? 'bg-rose-500 text-white'
+              ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
               : isWarning
-              ? 'bg-amber-500 text-slate-950 font-bold'
+              ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 font-bold'
               : 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold';
 
             const cardBorder = isAlert
-              ? 'border-rose-500/40 bg-rose-500/5'
+              ? 'border-outline-variant/30 bg-surface'
               : isWarning
-              ? 'border-amber-500/40 bg-amber-500/5'
+              ? 'border-outline-variant/30 bg-surface'
               : 'border-outline-variant/30 bg-surface';
 
             return (
@@ -308,7 +308,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                 className={`p-3.5 rounded-2xl border ${cardBorder} flex flex-col justify-between gap-2.5 transition-all shadow-xs`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-1.5 mb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
                       {act.id === 'curtains' && '🪟'}
                       {act.id === 'shading' && '☀️'}
@@ -316,7 +316,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                       {act.id === 'sanitary' && '🛡️'}
                       <span>{lang === 'es-PY' ? act.titleEs : act.titlePt}</span>
                     </span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full uppercase tracking-tight shrink-0 ${badgeBg}`}>
+                    <span className={`text-[10px] font-sans px-2 py-0.5 rounded-full uppercase tracking-tight shrink-0 ${badgeBg}`}>
                       {lang === 'es-PY' ? act.badgeEs : act.badgePt}
                     </span>
                   </div>
@@ -326,12 +326,10 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                   </p>
                 </div>
 
-                <div className="p-2 rounded-xl bg-surface-container/60 border border-outline-variant/20 text-[11px] text-on-surface-variant leading-tight">
-                  <span className="font-semibold block text-on-surface mb-0.5">
-                    {lang === 'es-PY' ? 'Por qué:' : 'Por que:'}
-                  </span>
-                  <span>{lang === 'es-PY' ? act.reasonEs : act.reasonPt}</span>
-                </div>
+                <details className="pt-2 border-t border-outline-variant/20 text-xs text-on-surface-variant leading-relaxed">
+                  <summary className="font-medium text-on-surface cursor-pointer py-1">
+                    {lang === 'es-PY' ? 'Ver motivo' : 'Ver motivo'}</summary>
+                  <p className="mt-2">{lang === 'es-PY' ? act.reasonEs : act.reasonPt}</p></details>
               </div>
             );
           })}
@@ -339,7 +337,7 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
       </div>
 
       {/* ─── 5. MÉTRICAS CLIMÁTICAS EXTERIORES (LIMPO & SEM POLUIÇÃO) ─── */}
-      <div className="px-4 py-3.5 sm:px-5 bg-surface-container-low/40 border-t border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="px-4 py-3.5 sm:px-5 bg-surface-container-low/40 border-t border-outline-variant/30 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
         {/* Temperatura e Condição do Céu */}
         <div className="flex items-center gap-3.5">
           <div className="p-3 bg-surface rounded-2xl shadow-xs border border-outline-variant/30 shrink-0">
@@ -347,10 +345,10 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-extrabold font-mono text-on-surface">
+              <span className="text-2xl font-semibold font-sans text-on-surface">
                 {current.temperature.toFixed(1)}°C
               </span>
-              <span className="text-xs font-mono text-on-surface-variant">
+              <span className="text-xs font-sans text-on-surface-variant">
                 ({lang === 'es-PY' ? 'Sensación' : 'Sensação'}: {current.apparentTemperature.toFixed(0)}°)
               </span>
             </div>
@@ -364,44 +362,44 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1 md:max-w-xl">
           {/* Umidade */}
           <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 flex flex-col">
-            <span className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1 font-semibold">
+            <span className="text-[10px] font-sans text-on-surface-variant flex items-center gap-1 font-semibold">
               <Droplets size={13} className="text-blue-500" />
               <span>{lang === 'es-PY' ? 'Humedad' : 'Umidade'}</span>
             </span>
-            <span className="text-xs font-bold font-mono text-on-surface mt-1">
+            <span className="text-xs font-bold font-sans text-on-surface mt-1">
               {current.humidity}%
             </span>
           </div>
 
           {/* Vento */}
           <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 flex flex-col">
-            <span className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1 font-semibold">
+            <span className="text-[10px] font-sans text-on-surface-variant flex items-center gap-1 font-semibold">
               <Wind size={13} className="text-teal-500" />
               <span>{lang === 'es-PY' ? 'Viento' : 'Vento'}</span>
             </span>
-            <span className="text-xs font-bold font-mono text-on-surface mt-1">
+            <span className="text-xs font-bold font-sans text-on-surface mt-1">
               {current.windSpeed.toFixed(0)} km/h
             </span>
           </div>
 
           {/* Radiação UV */}
           <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 flex flex-col">
-            <span className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1 font-semibold">
+            <span className="text-[10px] font-sans text-on-surface-variant flex items-center gap-1 font-semibold">
               <Sun size={13} className="text-amber-500" />
               <span>{lang === 'es-PY' ? 'Índice UV' : 'Índice UV'}</span>
             </span>
-            <span className={`text-xs font-bold font-mono mt-1 ${current.uvIndex >= 7.5 ? 'text-rose-600' : 'text-on-surface'}`}>
+            <span className={`text-xs font-bold font-sans mt-1 ${current.uvIndex >= 7.5 ? 'text-rose-600' : 'text-on-surface'}`}>
               {current.uvIndex.toFixed(1)} {current.uvIndex >= 7.5 ? '⚠️' : ''}
             </span>
           </div>
 
           {/* Chuva */}
           <div className="p-2.5 rounded-xl bg-surface border border-outline-variant/20 flex flex-col">
-            <span className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1 font-semibold">
+            <span className="text-[10px] font-sans text-on-surface-variant flex items-center gap-1 font-semibold">
               <CloudRain size={13} className="text-blue-500" />
               <span>{lang === 'es-PY' ? 'Lluvia' : 'Chuva'}</span>
             </span>
-            <span className="text-xs font-bold font-mono text-on-surface mt-1">
+            <span className="text-xs font-bold font-sans text-on-surface mt-1">
               {current.precipitation.toFixed(1)} mm
             </span>
           </div>
@@ -443,20 +441,20 @@ export const WeatherAlertCard: React.FC<WeatherAlertCardProps> = ({
                     <span className="text-xs font-bold text-on-surface capitalize block leading-tight">
                       {dayLabel}
                     </span>
-                    <span className="text-[10px] font-mono text-on-surface-variant">
+                    <span className="text-[10px] font-sans text-on-surface-variant">
                       {day.date}
                     </span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="font-mono text-xs font-black text-on-surface">
+                  <div className="font-sans text-xs font-black text-on-surface">
                     <span>{day.tempMax.toFixed(0)}°</span>
                     <span className="text-on-surface-variant/60 font-normal ml-1">
                       {day.tempMin.toFixed(0)}°
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400 font-semibold block">
+                  <span className="text-[10px] font-sans text-blue-600 dark:text-blue-400 font-semibold block">
                     {day.precipitationProbability}% {lang === 'es-PY' ? 'lluvia' : 'chuva'}
                   </span>
                 </div>

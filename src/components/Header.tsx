@@ -129,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
   const titleLabel = lang === 'es-PY' ? currentBreadcrumb.titleEs : currentBreadcrumb.titlePt;
 
   return (
-    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface/90 backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] z-40 flex items-center justify-between px-4 sm:px-6 border-b border-outline-variant/30 select-none">
+    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface/90 backdrop-blur-md shadow-[0_1px_4px_rgba(0,0,0,0.03)] z-40 flex items-center justify-between gap-3 px-3 sm:px-6 border-b border-outline-variant/30 select-none">
       {/* ─── LADO ESQUERDO: Contexto Operacional & Breadcrumb ─── */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Toggle do Menu Lateral no Mobile */}
@@ -151,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Breadcrumb limpo do módulo atual (Desktop) */}
-        <div className="hidden sm:flex items-center gap-2 text-xs truncate">
+        <div className="hidden xl:flex items-center gap-2 text-xs min-w-0">
           <span className="text-[11px] font-mono uppercase tracking-wider text-on-surface-variant/80 font-semibold truncate">
             {groupLabel}
           </span>
@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Tag da Estufa Ativa (Contexto Físico de Cultivo) - Visível a partir de sm para despoluir mobile */}
-        <div className="hidden sm:flex items-center gap-1.5 bg-surface-container-high/80 border border-outline-variant/40 px-2.5 py-1 rounded-full text-xs text-on-surface shrink-0">
+        <div className="hidden 2xl:flex items-center gap-1.5 bg-surface-container-high/80 border border-outline-variant/40 px-2.5 py-1 rounded-full text-xs text-on-surface shrink-0">
           <Sprout className="w-3.5 h-3.5 text-primary shrink-0" />
           <span className="font-semibold text-[11px] max-w-[130px] sm:max-w-[200px] truncate">
             {activeZone ? activeZone.name : 'Estufa 01'}
@@ -176,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
         <WeatherWidget lang={lang} />
 
         {/* Status IoT e Automação Unificado (Desktop) */}
-        <div className="hidden md:flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary px-3 py-1 rounded-full text-xs font-medium">
+        <div className="hidden 2xl:flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary px-3 py-1 rounded-full text-xs font-medium">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -190,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onToggleViewMode && (
           <button
             onClick={onToggleViewMode}
-            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+            className={`hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
               viewMode === 'producer_easy'
                 ? 'bg-surface-container-highest text-on-surface hover:bg-surface-container'
                 : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container'
@@ -220,8 +220,8 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-full h-full object-cover scale-110"
               />
             </div>
-            <span className="hidden sm:inline font-sans text-xs">Don Mateo</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block"></span>
+            <span className="hidden xl:inline font-sans text-xs">Don Mateo</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden xl:inline-block"></span>
           </button>
         )}
 
