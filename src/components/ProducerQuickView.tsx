@@ -630,7 +630,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             }`}
           >
             <span className="text-base">🫑</span>
-            <span>Locote Verde</span>
+            <span>{lang === 'pt-BR' ? 'Pimentão Verde' : 'Locote Verde'}</span>
             <span className="text-[10px] opacity-80 font-mono bg-black/20 px-1.5 py-0.2 rounded-full">
               {zones.filter((z) => z.cropType === 'locote').length}
             </span>
@@ -695,8 +695,16 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         </div>
       </div>
 
-      {/* Previsão do Tempo em Tempo Real e Alertas Climáticos para as Estufas */}
-      <WeatherAlertCard lang={lang} />
+      {/* Previsão do Tempo em Tempo Real e Monitor Inteligente de Estufa (Tomate & Locote) */}
+      <div className={currentTab === 'inicio' ? 'block' : 'hidden md:block'}>
+        <WeatherAlertCard
+          lang={lang}
+          crop={selectedCrop}
+          onCropChange={handleCropChange}
+          onOpenMateoChat={onOpenMateoChat}
+          showCropSelector={false}
+        />
+      </div>
 
       {/* =========================================================
           3. SELECTOR DE CULTIVO & INVERNADEROS (DESKTOP)
@@ -733,9 +741,9 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
               }`}
             >
               <span className="text-lg">🫑</span>
-              <span>LOCOTE VERDE</span>
+              <span>{lang === 'pt-BR' ? 'PIMENTÃO VERDE' : 'LOCOTE VERDE'}</span>
               <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">
-                {zones.filter((z) => z.cropType === 'locote').length} Invernaderos
+                {zones.filter((z) => z.cropType === 'locote').length} {lang === 'pt-BR' ? 'Estufas' : 'Invernaderos'}
               </span>
             </button>
           </div>
@@ -797,9 +805,10 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
         <div className="bg-surface-container-lowest rounded-2xl p-3.5 sm:p-4 shadow-sm border border-outline-variant/30">
           <div className="flex items-center justify-between pb-2.5 border-b border-outline-variant/20 mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-base">📡</span>
+              <span className="text-base">🧪</span>
               <h2 className="text-xs sm:text-sm font-bold text-on-surface">
-                Estado del Invernadero • {currentZone.name}
+                {lang === 'es-PY' ? 'Sensores Internos • ' : 'Sensores Internos da Estufa • '}
+                {currentZone.name}
               </h2>
             </div>
             <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
@@ -812,7 +821,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
               <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                 <Droplets className="w-3 h-3 text-blue-500" />
-                pH
+                pH Água
               </span>
               <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
                 {targets.phCurrent}
@@ -826,7 +835,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
               <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                 <Zap className="w-3 h-3 text-amber-500" />
-                CE
+                CE Adubo
               </span>
               <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
                 {targets.ecCurrent}
@@ -840,7 +849,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
               <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                 <Thermometer className="w-3 h-3 text-rose-500" />
-                Temp
+                {lang === 'es-PY' ? 'Temp. Int.' : 'Temp. Int.'}
               </span>
               <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
                 {targets.tempCurrent}°
@@ -854,7 +863,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
             <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
               <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
                 <Activity className="w-3 h-3 text-teal-500" />
-                Hum
+                {lang === 'es-PY' ? 'Hum. Int.' : 'Umid. Int.'}
               </span>
               <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
                 {targets.humidityCurrent}%

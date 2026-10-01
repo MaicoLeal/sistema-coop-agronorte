@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   evaluateWeatherAlerts,
+  evaluateGreenhouseAdvice,
   WeatherService,
   CurrentWeather,
   DailyForecast,
@@ -89,4 +90,53 @@ test('WeatherService devolve dados válidos de Guayaibí mesmo com fallback offl
   assert.ok(typeof data.current.temperature === 'number');
   assert.ok(Array.isArray(data.daily));
   assert.ok(Array.isArray(data.activeAlerts));
+  assert.ok(data.greenhouseAdvice?.tomate);
+  assert.ok(data.greenhouseAdvice?.locote);
+});
+
+test('evaluateGreenhouseAdvice gera ações para Tomate com alerta de requeima sob alta umidade', () => {
+  const humidCurrent: CurrentWeather = {
+    ...baseCurrent,
+    humidity: 88,
+    precipitation: 2.0,
+    weatherCode: 61,
+  };
+  const advice = evaluateGreenhouseAdvice(humidCurrent, baseDaily, 'tomate');
+
+  assert.equal(advice.crop, 'tomate');
+  assert.equal(advice.overallStatus, 'critical');
+  const sanitaryAction = advice.actions.find((a) => a.id === 'sanitary');
+  assert.ok(sanitaryAction, 'deveria ter ação de sanidade');
+  assert.match(sanitaryAction.badgePt, /REQUEIMA/i);
+  assert.match(sanitaryAction.badgeEs, /TIZÓN/i);
+  assert.ok(advice.voiceBriefingPt.includes('Don Mateo'));
+});
+
+test('evaluateGreenhouseAdvice gera proteção de sombrite contra golpe de sol para Locote sob calor e UV alto', () => {
+  const sunnyCurrent: CurrentWeather = {
+    ...baseCurrent,
+    temperature: 32.5,
+    uvIndex: 8.8,
+  };
+  const advice = evaluateGreenhouseAdvice(sunnyCurrent, baseDaily, 'locote');
+
+  assert.equal(advice.crop, 'locote');
+  assert.equal(advice.overallStatus, 'critical');
+  const shadingAction = advice.actions.find((a) => a.id === 'shading');
+  assert.ok(shadingAction, 'deveria ter ação de sombreamento');
+  assert.match(shadingAction.badgePt, /PROTEGER FRUTOS|Sombrite/i);
+  assert.match(shadingAction.instructionEs, /golpe de sol/i);
+});
+
+test('WeatherService.getGreenhouseAdvice retorna conselhos agronômicos em tempo real', async () => {
+  const data = await WeatherService.getWeatherForecast();
+  const tomatoAdvice = WeatherService.getGreenhouseAdvice(data, 'tomate');
+  const locoteAdvice = WeatherService.getGreenhouseAdvice(data, 'locote');
+
+  assert.equal(tomatoAdvice.crop, 'tomate');
+  assert.equal(locoteAdvice.crop, 'locote');
+  assert.equal(tomatoAdvice.actions.length, 4);
+  assert.equal(locoteAdvice.actions.length, 4);
+  assert.ok(tomatoAdvice.voiceBriefingPt.length > 20);
+  assert.ok(locoteAdvice.voiceBriefingEs.length > 20);
 });

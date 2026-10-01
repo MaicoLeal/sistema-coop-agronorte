@@ -161,8 +161,8 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
 
-        {/* Tag da Estufa Ativa (Contexto Físico de Cultivo) */}
-        <div className="flex items-center gap-1.5 bg-surface-container-high/80 border border-outline-variant/40 px-2.5 py-1 rounded-full text-xs text-on-surface shrink-0">
+        {/* Tag da Estufa Ativa (Contexto Físico de Cultivo) - Visível a partir de sm para despoluir mobile */}
+        <div className="hidden sm:flex items-center gap-1.5 bg-surface-container-high/80 border border-outline-variant/40 px-2.5 py-1 rounded-full text-xs text-on-surface shrink-0">
           <Sprout className="w-3.5 h-3.5 text-primary shrink-0" />
           <span className="font-semibold text-[11px] max-w-[130px] sm:max-w-[200px] truncate">
             {activeZone ? activeZone.name : 'Estufa 01'}
@@ -171,26 +171,26 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* ─── LADO DIREITO: Clima em Tempo Real, Status Unificado, Ações e Perfil ─── */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Previsão do Tempo e Alertas Climáticos (Chuva, Vento, Sol Forte) */}
         <WeatherWidget lang={lang} />
 
-        {/* Status IoT e Automação Unificado (Limpo e profissional) */}
+        {/* Status IoT e Automação Unificado (Desktop) */}
         <div className="hidden md:flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary px-3 py-1 rounded-full text-xs font-medium">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <span className="font-mono text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
-            IoT & Irrigação Online
+            IoT Online
           </span>
         </div>
 
-        {/* Alternador de Modo (Produtor / Gestão Completa) */}
+        {/* Alternador de Modo (Produtor / Gestão Completa - Desktop) */}
         {onToggleViewMode && (
           <button
             onClick={onToggleViewMode}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
               viewMode === 'producer_easy'
                 ? 'bg-surface-container-highest text-on-surface hover:bg-surface-container'
                 : 'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container'
@@ -209,10 +209,11 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenMateoChat && (
           <button
             onClick={onOpenMateoChat}
-            className="flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-100 pl-1 pr-2.5 py-1 rounded-full text-xs font-bold border border-emerald-600/40 hover:border-emerald-400 transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-100 p-1 sm:pl-1 sm:pr-2.5 sm:py-1 rounded-full text-xs font-bold border border-emerald-600/40 hover:border-emerald-400 transition-all cursor-pointer shadow-xs"
             title={lang === 'pt-BR' ? 'Consultor Agrícola Don Mateo' : 'Asesor Agrícola Don Mateo'}
+            aria-label="Don Mateo"
           >
-            <div className="w-5 h-5 rounded-full overflow-hidden ring-1 ring-emerald-400/80 shrink-0 bg-emerald-950">
+            <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-emerald-400/80 shrink-0 bg-emerald-950">
               <img
                 src="/assets/don-mateo/don-mateo-idle.jpg"
                 alt="Don Mateo"
@@ -220,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </div>
             <span className="hidden sm:inline font-sans text-xs">Don Mateo</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block"></span>
           </button>
         )}
 
@@ -228,23 +229,23 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative flex items-center">
           <button
             onClick={onOpenNotifications}
-            className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
             type="button"
             title={lang === 'es-PY' ? 'Alertas y Notificaciones' : 'Alertas e Notificações'}
           >
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           {unreadAlertsCount > 0 && (
-            <span className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-error text-on-error font-mono text-[9px] font-bold ring-2 ring-surface">
+            <span className="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[15px] h-3.5 sm:h-4 px-1 rounded-full bg-error text-on-error font-mono text-[8px] sm:text-[9px] font-bold ring-2 ring-surface">
               {unreadAlertsCount}
             </span>
           )}
         </div>
 
-        <div className="h-5 w-px bg-outline-variant/50 hidden sm:block"></div>
+        <div className="h-5 w-px bg-outline-variant/50 hidden md:block"></div>
 
-        {/* Perfil do Usuário com avatar */}
-        <div className="flex items-center gap-2">
+        {/* Perfil do Usuário com avatar (Desktop) */}
+        <div className="hidden md:flex items-center gap-2">
           <div className="text-right hidden xl:block">
             <span className="text-xs text-on-surface block font-bold leading-tight">
               {currentUser.name}
