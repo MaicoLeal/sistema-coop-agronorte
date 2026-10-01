@@ -467,7 +467,7 @@ export default function App() {
         onCloseExternal={() => setShowMateoChat(false)}
         onOpenHarvest={() => {
           if (viewMode === 'producer_easy') {
-            setMobileTab('cosecha');
+            setMobileTab('cultivo');
           } else {
             setActiveTab('harvest');
           }

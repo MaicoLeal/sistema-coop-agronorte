@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import {
   Language,
   UserProfile,
@@ -95,8 +95,12 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       onOpenMateoChat();
       return;
     }
-    setInternalTab(tab);
-    if (onMobileTabChange) onMobileTabChange(tab);
+    if (tab === 'historial') {
+      setShowHistoryModal(true);
+      return;
+    }
+    setInternalTab(tab as any);
+    if (onMobileTabChange) onMobileTabChange(tab as any);
   };
 
   // 🎯 CROP SELECTOR (Tomate vs Locote Verde)
@@ -174,6 +178,7 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
   const [harvestSuccessMessage, setHarvestSuccessMessage] = useState<string | null>(null);
   const [harvests, setHarvests] = useState<HarvestRecord[]>(() => StorageService.getHarvests());
   const [harvestSubTab, setHarvestSubTab] = useState<'registrar' | 'historial'>('registrar');
+  const [cultivoSubTab, setCultivoSubTab] = useState<'sensores' | 'cosecha' | 'apunte'>('sensores');
   const [editingHarvest, setEditingHarvest] = useState<HarvestRecord | null>(null);
   const [deletingHarvest, setDeletingHarvest] = useState<HarvestRecord | null>(null);
   const [editHarvestBoxes, setEditHarvestBoxes] = useState<number>(15);
@@ -565,76 +570,74 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
       {/* =========================================================
           1. HEADER MOBILE COMPACTO TIPO APP (Oculto en Desktop)
          ========================================================= */}
-      <div className="md:hidden space-y-2.5">
-        {/* Barra superior compacta con Selector de Invernadero y Estado General */}
-        <div className="bg-surface-container-lowest rounded-2xl p-3 shadow-sm border border-outline-variant/30 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
-              {selectedCrop === 'tomate' ? '🍅' : '🫑'}
-            </div>
-            <div className="min-w-0">
-              <span className="text-[10px] uppercase font-mono font-bold text-emerald-700 dark:text-emerald-400 block leading-tight">
-                Coop Agronorte
-              </span>
-              <div className="relative inline-block max-w-[180px]">
-                <select
-                  aria-label="Seleccionar Invernadero"
-                  value={currentZone.id}
-                  onChange={(e) => handleZoneChange(e.target.value)}
-                  className="appearance-none text-xs font-black text-on-surface bg-transparent pr-4 truncate focus:outline-none cursor-pointer"
-                >
-                  {cropZones.map((z) => (
-                    <option key={z.id} value={z.id} className="text-black dark:text-white">
-                      {z.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" />
+      <div className="md:hidden space-y-2">
+        {/* Barra superior única: Cultivo activo + Estado + Selector de Invernadero */}
+        <div className="bg-surface-container-lowest rounded-2xl p-3 shadow-sm border border-outline-variant/30">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl shrink-0">{selectedCrop === 'tomate' ? '🍅' : '🫑'}</span>
+              <div className="min-w-0">
+                <p className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider leading-none">
+                  Coop Agronorte
+                </p>
+                <div className="relative inline-block max-w-[200px]">
+                  <select
+                    aria-label="Seleccionar Invernadero"
+                    value={currentZone.id}
+                    onChange={(e) => handleZoneChange(e.target.value)}
+                    className="appearance-none text-sm font-black text-on-surface bg-transparent pr-5 truncate focus:outline-none cursor-pointer leading-tight"
+                  >
+                    {cropZones.map((z) => (
+                      <option key={z.id} value={z.id} className="text-black dark:text-white">
+                        {z.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3 h-3 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant" />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-500/30 shadow-xs">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Óptimo
             </span>
           </div>
-        </div>
 
-        {/* Selector de Cultivo Activo (Tomate vs Locote Verde) */}
-        <div className="grid grid-cols-2 gap-2 bg-surface-container-high/60 p-1 rounded-2xl border border-outline-variant/20">
-          <button
-            type="button"
-            onClick={() => handleCropChange('tomate')}
-            className={`min-h-[44px] py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              selectedCrop === 'tomate'
-                ? 'bg-red-600 text-white shadow-sm scale-101'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            <span className="text-base">🍅</span>
-            <span>Tomate</span>
-            <span className="text-[10px] opacity-80 font-mono bg-black/20 px-1.5 py-0.2 rounded-full">
-              {zones.filter((z) => z.cropType === 'tomate').length}
-            </span>
-          </button>
+          {/* Selector de Cultivo Activo (Tomate vs Locote Verde) */}
+          <div className="grid grid-cols-2 gap-1.5 bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/20">
+            <button
+              type="button"
+              onClick={() => handleCropChange('tomate')}
+              className={`min-h-[40px] py-1.5 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                selectedCrop === 'tomate'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <span>🍅</span>
+              <span>Tomate</span>
+              <span className="text-[10px] opacity-70 font-mono bg-black/15 px-1.5 py-0.5 rounded-full">
+                {zones.filter((z) => z.cropType === 'tomate').length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleCropChange('locote')}
-            className={`min-h-[44px] py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              selectedCrop === 'locote'
-                ? 'bg-emerald-700 text-white shadow-sm scale-101'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
-          >
-            <span className="text-base">🫑</span>
-            <span>{lang === 'pt-BR' ? 'Pimentão Verde' : 'Locote Verde'}</span>
-            <span className="text-[10px] opacity-80 font-mono bg-black/20 px-1.5 py-0.2 rounded-full">
-              {zones.filter((z) => z.cropType === 'locote').length}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleCropChange('locote')}
+              className={`min-h-[40px] py-1.5 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                selectedCrop === 'locote'
+                  ? 'bg-emerald-700 text-white shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <span>🫑</span>
+              <span>{lang === 'pt-BR' ? 'Pimentão' : 'Locote'}</span>
+              <span className="text-[10px] opacity-70 font-mono bg-black/15 px-1.5 py-0.5 rounded-full">
+                {zones.filter((z) => z.cropType === 'locote').length}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -800,512 +803,542 @@ export const ProducerQuickView: React.FC<ProducerQuickViewProps> = ({
          ========================================================= */}
 
       {/* --- PESTAÑA: INICIO (Mobile Dashboard) --- */}
-      <div className={`${currentTab === 'inicio' ? 'block' : 'hidden md:block'} space-y-3.5`}>
-        {/* Mini Resumen de Sensores (Compacto) */}
-        <div className="bg-surface-container-lowest rounded-2xl p-3.5 sm:p-4 shadow-sm border border-outline-variant/30">
-          <div className="flex items-center justify-between pb-2.5 border-b border-outline-variant/20 mb-3">
+      <div className={`${currentTab === 'inicio' ? 'block' : 'hidden md:block'} space-y-3`}>
+
+        {/* SENSORES: Cards grandes e claros — 2x2 */}
+        <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <span className="text-base">🧪</span>
-              <h2 className="text-xs sm:text-sm font-bold text-on-surface">
-                {lang === 'es-PY' ? 'Sensores Internos • ' : 'Sensores Internos da Estufa • '}
-                {currentZone.name}
+              <h2 className="text-sm font-bold text-on-surface">
+                Sensores Internos
               </h2>
+              <span className="text-xs text-on-surface-variant font-medium">
+                • {currentZone.name}
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
-              Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
+            <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-400/30">
+              {currentBatch?.batchCode || 'TOM-2026-088'}
             </span>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="grid grid-cols-2 gap-2.5">
             {/* pH */}
-            <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
-              <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                <Droplets className="w-3 h-3 text-blue-500" />
-                pH Água
-              </span>
-              <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
-                {targets.phCurrent}
-              </span>
-              <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold">
-                ✓ Ideal
-              </span>
-            </div>
-
-            {/* EC */}
-            <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
-              <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                <Zap className="w-3 h-3 text-amber-500" />
-                CE Adubo
-              </span>
-              <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
-                {targets.ecCurrent}
-              </span>
-              <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold">
-                ✓ Equil.
-              </span>
-            </div>
-
-            {/* Temp */}
-            <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
-              <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                <Thermometer className="w-3 h-3 text-rose-500" />
-                {lang === 'es-PY' ? 'Temp. Int.' : 'Temp. Int.'}
-              </span>
-              <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
-                {targets.tempCurrent}°
-              </span>
-              <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold">
-                ✓ Confort
-              </span>
-            </div>
-
-            {/* Humedad */}
-            <div className="bg-surface-container-high/60 rounded-xl p-2 border border-outline-variant/20 flex flex-col justify-between">
-              <span className="text-[10px] text-on-surface-variant font-medium flex items-center justify-center gap-1">
-                <Activity className="w-3 h-3 text-teal-500" />
-                {lang === 'es-PY' ? 'Hum. Int.' : 'Umid. Int.'}
-              </span>
-              <span className="text-base sm:text-lg font-black font-mono text-on-surface my-0.5">
-                {targets.humidityCurrent}%
-              </span>
-              <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold">
-                ✓ Normal
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 5 Cards de Acciones Rápidas (Requisito 3) */}
-        <div>
-          <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-1">
-            Acciones Rápidas
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {/* 1. Registrar cosecha */}
-            <button
-              type="button"
-              onClick={() => handleTabSwitch('cosecha')}
-              className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0 shadow-xs">
-                  <Package className="w-5 h-5 text-secondary" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
-                    Registrar cosecha
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant">
-                    Cargue las cajas del día
-                  </p>
-                </div>
+            <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-3.5 border border-blue-200/60 dark:border-blue-800/40">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Droplets className="w-4 h-4 text-blue-500" />
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">pH Solução</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-            </button>
-
-            {/* 2. Botón Historial de la planta (Abre modal con toda la información sin exponerla en la pantalla principal) */}
-            <button
-              type="button"
-              onClick={() => setShowHistoryModal(true)}
-              className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 shadow-xs">
-                  <History className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
-                    Historial de la planta
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant">
-                    {interventions.length} pasos registrados • Tocar para abrir
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-            </button>
-
-            {/* 3. Detectar plagas/enfermedades */}
-            <button
-              type="button"
-              onClick={onOpenPestDiagnosis}
-              className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-amber-500 text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
-                  <Camera className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-on-surface group-hover:text-amber-600 transition-colors">
-                    Detectar plagas
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant">
-                    Diagnóstico con IA
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-            </button>
-
-            {/* 4. Generar certificado */}
-            <button
-              type="button"
-              onClick={() => setShowCertificateModal(true)}
-              className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-emerald-600 text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-on-surface group-hover:text-emerald-600 transition-colors">
-                    Generar certificado
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant">
-                    Lote {currentBatch?.batchCode || 'TOM-2026-088'}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-            </button>
-
-            {/* 5. Escuchar Don Mateo */}
-            <button
-              type="button"
-              onClick={handlePlayBriefing}
-              className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-emerald-600 text-left flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-xs min-h-[56px] group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-800 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Volume2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-on-surface group-hover:text-emerald-600 transition-colors">
-                    Escuchar Don Mateo
-                  </h4>
-                  <p className="text-[11px] text-on-surface-variant">
-                    Resumen del día en audio
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* --- PESTAÑA: CULTIVO (Telemetría y Microclima) --- */}
-      <div className={`${currentTab === 'cultivo' ? 'block' : 'hidden md:block'} space-y-4`}>
-        <div className="bg-surface-container-lowest rounded-3xl p-5 sm:p-6 shadow-sm border border-outline-variant/30">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/30">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg sm:text-xl font-black text-on-surface">
-                  {currentZone.name}
-                </h2>
-                <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/40">
-                  Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                  {targets.phCurrent}
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  ✓ Ideal
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant mt-0.5">
-                {currentZone.cultivar} • Sistema {currentZone.systemType} • {targets.stage}
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Meta: {targets.phMin} – {targets.phMax}
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowManualEntryModal(true)}
-                className="min-h-[44px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95"
-              >
-                <FilePenLine className="w-4 h-4" />
-                <span>+ Cargar Apunte</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 4 Sensores IoT en tiempo real */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-            {/* pH */}
-            <div className="bg-surface-container-high/70 rounded-2xl p-3.5 border border-outline-variant/20 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                  <Droplets className="w-3.5 h-3.5 text-blue-500" />
-                  pH Solución
-                </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            {/* CE / EC */}
+            <div className="bg-amber-50 dark:bg-amber-950/40 rounded-2xl p-3.5 border border-amber-200/60 dark:border-amber-800/40">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Zap className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">CE Adubo</span>
               </div>
-              <div className="my-2">
-                <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
-                  {targets.phCurrent}
-                </span>
-                <span className="text-xs text-on-surface-variant font-medium ml-1">pH</span>
-              </div>
-              <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
-                <span>Meta: {targets.phMin} - {targets.phMax}</span>
-                <span className="font-bold">✓ Ideal</span>
-              </div>
-            </div>
-
-            {/* EC */}
-            <div className="bg-surface-container-high/70 rounded-2xl p-3.5 border border-outline-variant/20 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-500" />
-                  Conductividad
-                </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <div className="my-2">
-                <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-black font-mono text-on-surface leading-none">
                   {targets.ecCurrent}
                 </span>
-                <span className="text-xs text-on-surface-variant font-medium ml-1">mS/cm</span>
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  ✓ Equil.
+                </span>
               </div>
-              <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
-                <span>Meta: {targets.ecMin} - {targets.ecMax}</span>
-                <span className="font-bold">✓ Equilibrada</span>
-              </div>
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Meta: {targets.ecMin} – {targets.ecMax} mS/cm
+              </p>
             </div>
 
-            {/* Temp */}
-            <div className="bg-surface-container-high/70 rounded-2xl p-3.5 border border-outline-variant/20 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                  <Thermometer className="w-3.5 h-3.5 text-rose-500" />
-                  Temperatura
+            {/* Temperatura */}
+            <div className="bg-rose-50 dark:bg-rose-950/40 rounded-2xl p-3.5 border border-rose-200/60 dark:border-rose-800/40">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Thermometer className="w-4 h-4 text-rose-500" />
+                <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Temperatura</span>
+              </div>
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                  {targets.tempCurrent}°
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <div className="my-2">
-                <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
-                  {targets.tempCurrent}
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  ✓ Confort
                 </span>
-                <span className="text-xs text-on-surface-variant font-medium ml-1">°C</span>
               </div>
-              <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
-                <span>Meta: {targets.tempMin} - {targets.tempMax}°C</span>
-                <span className="font-bold">✓ Confort</span>
-              </div>
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Meta: {targets.tempMin} – {targets.tempMax} °C
+              </p>
             </div>
 
             {/* Humedad */}
-            <div className="bg-surface-container-high/70 rounded-2xl p-3.5 border border-outline-variant/20 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-teal-500" />
-                  Humedad
+            <div className="bg-teal-50 dark:bg-teal-950/40 rounded-2xl p-3.5 border border-teal-200/60 dark:border-teal-800/40">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Activity className="w-4 h-4 text-teal-500" />
+                <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">Humedad</span>
+              </div>
+              <div className="flex items-end justify-between">
+                <span className="text-3xl font-black font-mono text-on-surface leading-none">
+                  {targets.humidityCurrent}%
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <div className="my-2">
-                <span className="text-2xl sm:text-3xl font-mono font-black text-on-surface">
-                  {targets.humidityCurrent}
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-400/30">
+                  ✓ Normal
                 </span>
-                <span className="text-xs text-on-surface-variant font-medium ml-1">% UR</span>
               </div>
-              <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-lg border border-emerald-500/30 flex items-center justify-between">
-                <span>Rango: 65% - 80%</span>
-                <span className="font-bold">✓ Normal</span>
-              </div>
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Rango: 65% – 80% UR
+              </p>
             </div>
           </div>
+
+          {/* Stage badge */}
+          <div className="mt-3 flex items-center justify-center">
+            <span className="text-[11px] font-medium text-on-surface-variant bg-surface-container-high px-3 py-1 rounded-full border border-outline-variant/20">
+              🌱 {targets.stage}
+            </span>
+          </div>
+        </div>
+
+        {/* ACCIONES PRIMÁRIAS — 3 botões grandes em linha */}
+        <div>
+          <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 px-1">
+            Acciones rápidas
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {/* 1. Registrar Cosecha → vai para aba cultivo sub-tab cosecha */}
+            <button
+              type="button"
+              onClick={() => {
+                handleTabSwitch('cultivo');
+                setCultivoSubTab('cosecha');
+              }}
+              className="min-h-[72px] p-3 rounded-2xl bg-secondary-container border border-secondary/20 hover:bg-secondary/20 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+            >
+              <div className="w-9 h-9 rounded-xl bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
+                <Package className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">
+                Registrar{'\n'}Cosecha
+              </span>
+            </button>
+
+            {/* 2. Cargar Apunte */}
+            <button
+              type="button"
+              onClick={() => handleOpenCreateEntry('ph_ec_manual')}
+              className="min-h-[72px] p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/50 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-sm">
+                <FilePenLine className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">
+                Cargar{'\n'}Apunte
+              </span>
+            </button>
+
+            {/* 3. Detectar Plagas */}
+            <button
+              type="button"
+              onClick={onOpenPestDiagnosis}
+              className="min-h-[72px] p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300/50 dark:border-amber-800/40 hover:bg-amber-100 dark:hover:bg-amber-950/70 flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-sm">
+                <Camera className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-on-surface text-center leading-tight">
+                Detectar{'\n'}Plagas
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* ACCIONES SECUNDÁRIAS — 2 botões em linha */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setShowHistoryModal(true)}
+            className="p-3 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary text-left flex items-center gap-3 transition-all active:scale-98 cursor-pointer shadow-xs group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center shrink-0">
+              <History className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">
+                Historial
+              </p>
+              <p className="text-[10px] text-on-surface-variant truncate">
+                {interventions.length} registros
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowCertificateModal(true)}
+            className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300/40 hover:border-amber-500 text-left flex items-center gap-3 transition-all active:scale-98 cursor-pointer shadow-xs group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
+              <Award className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-on-surface group-hover:text-amber-700 transition-colors">
+                Certificado
+              </p>
+              <p className="text-[10px] text-on-surface-variant truncate">
+                {currentBatch?.batchCode || 'Lote activo'}
+              </p>
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* --- PESTAÑA: COSECHA (Gestión Completa de Cosechas CRUD) --- */}
-      <div className={`${currentTab === 'cosecha' ? 'block' : 'hidden'}`}>
-        <div className="max-w-xl mx-auto space-y-4">
-          {/* Sub-tabs Selector: Registrar vs Historial */}
-          <div className="flex items-center justify-center p-1 bg-surface-container-high rounded-2xl border border-outline-variant/20 max-w-sm mx-auto">
-            <button
-              type="button"
-              onClick={() => setHarvestSubTab('registrar')}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                harvestSubTab === 'registrar'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nueva Cosecha</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setHarvestSubTab('historial')}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                harvestSubTab === 'historial'
-                  ? 'bg-primary text-on-primary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <History className="w-4 h-4" />
-              <span>Lotes Cosechados ({harvests.length})</span>
-            </button>
-          </div>
+      {/* --- PESTAÑA: CULTIVO (Sub-tabs: Sensores | Cosecha | Apunte) --- */}
+      <div className={`${currentTab === 'cultivo' ? 'block' : 'hidden md:block'} space-y-3`}>
 
-          {harvestSubTab === 'registrar' ? (
-            <div className="bg-surface-container-lowest rounded-3xl p-5 sm:p-6 shadow-md border border-outline-variant/30 text-center space-y-4">
-              <div>
-                <div className="w-12 h-12 rounded-2xl bg-secondary-container text-on-secondary-container mx-auto flex items-center justify-center shadow-xs mb-2">
-                  <Package className="w-6 h-6 text-secondary" />
+        {/* Zona info header */}
+        <div className="bg-surface-container-lowest rounded-2xl px-4 py-3 shadow-sm border border-outline-variant/30 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-black text-on-surface">{currentZone.name}</h2>
+              <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/40">
+                {currentBatch?.batchCode || 'TOM-2026-088'}
+              </span>
+            </div>
+            <p className="text-[11px] text-on-surface-variant mt-0.5">
+              {currentZone.cultivar} • {targets.stage}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            En línea
+          </span>
+        </div>
+
+        {/* Sub-tab selector: Sensores | Cosecha | Apunte */}
+        <div className="flex gap-1.5 bg-surface-container-high/60 p-1 rounded-2xl border border-outline-variant/20">
+          {[
+            { id: 'sensores' as const, label: '🌡️ Sensores' },
+            { id: 'cosecha' as const, label: '📦 Cosecha' },
+            { id: 'apunte' as const, label: '📝 Apunte' }
+          ].map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              onClick={() => setCultivoSubTab(st.id)}
+              className={`flex-1 min-h-[40px] py-2 px-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                cultivoSubTab === st.id
+                  ? 'bg-primary text-on-primary shadow-sm'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              {st.label}
+            </button>
+          ))}
+        </div>
+
+        {/* === SUB-TAB: SENSORES === */}
+        {cultivoSubTab === 'sensores' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* pH */}
+              <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4 border border-blue-200/60 dark:border-blue-800/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Droplets className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">pH Solução</span>
+                  <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <h2 className="text-xl font-black text-on-surface">
-                  Registrar cosecha
-                </h2>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  Cargue las cajas cosechadas hoy en {currentZone.name}
-                </p>
-                <div className="mt-2 inline-block">
-                  <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-bold px-3 py-1 rounded-full border border-emerald-400/40">
-                    Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
-                  </span>
+                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.phCurrent}</div>
+                <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
+                  Meta: {targets.phMin} – {targets.phMax} ✓
                 </div>
               </div>
 
-              {harvestSuccessMessage ? (
-                <div className="py-6 space-y-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl p-4 border border-emerald-500/30">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto animate-bounce" />
-                  <h4 className="text-base font-bold text-on-surface">¡Cosecha Guardada!</h4>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
-                    {harvestSuccessMessage}
-                  </p>
+              {/* CE */}
+              <div className="bg-amber-50 dark:bg-amber-950/40 rounded-2xl p-4 border border-amber-200/60 dark:border-amber-800/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">CE Adubo</span>
+                  <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-              ) : (
-                <div className="space-y-4 pt-1">
-                  {/* Counter simple */}
-                  <div className="flex items-center justify-center gap-4 bg-surface-container-high/60 p-3.5 rounded-2xl border border-outline-variant/20">
-                    <button
-                      type="button"
-                      onClick={() => setBoxCount(Math.max(1, boxCount - 1))}
-                      className="w-12 h-12 rounded-xl bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95 min-h-[44px]"
-                      aria-label="Restar una caja"
-                    >
-                      <Minus className="w-6 h-6" />
-                    </button>
-                    <div className="w-24 text-center">
-                      <span className="text-4xl font-black text-primary font-mono block">
-                        {boxCount}
-                      </span>
-                      <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">
-                        Cajas
+                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.ecCurrent}</div>
+                <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
+                  Meta: {targets.ecMin} – {targets.ecMax} mS ✓
+                </div>
+              </div>
+
+              {/* Temp */}
+              <div className="bg-rose-50 dark:bg-rose-950/40 rounded-2xl p-4 border border-rose-200/60 dark:border-rose-800/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Thermometer className="w-4 h-4 text-rose-500" />
+                  <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Temperatura</span>
+                  <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.tempCurrent}°</div>
+                <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
+                  Meta: {targets.tempMin} – {targets.tempMax} °C ✓
+                </div>
+              </div>
+
+              {/* Humedad */}
+              <div className="bg-teal-50 dark:bg-teal-950/40 rounded-2xl p-4 border border-teal-200/60 dark:border-teal-800/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Activity className="w-4 h-4 text-teal-500" />
+                  <span className="text-xs font-semibold text-teal-700 dark:text-teal-400">Humedad</span>
+                  <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+                <div className="text-3xl font-black font-mono text-on-surface mb-1">{targets.humidityCurrent}%</div>
+                <div className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-400/30 inline-block">
+                  Rango: 65% – 80% UR ✓
+                </div>
+              </div>
+            </div>
+
+            {/* Quick action bar */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setCultivoSubTab('cosecha')}
+                className="min-h-[52px] p-3 rounded-2xl bg-secondary-container border border-secondary/20 hover:bg-secondary/15 flex items-center gap-3 cursor-pointer transition-all active:scale-98"
+              >
+                <Package className="w-5 h-5 text-secondary shrink-0" />
+                <div className="text-left">
+                  <p className="text-xs font-bold text-on-surface">Registrar Cosecha</p>
+                  <p className="text-[10px] text-on-surface-variant">Cajas del día</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCultivoSubTab('apunte')}
+                className="min-h-[52px] p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/50 hover:bg-emerald-100 flex items-center gap-3 cursor-pointer transition-all active:scale-98"
+              >
+                <FilePenLine className="w-5 h-5 text-emerald-700 dark:text-emerald-400 shrink-0" />
+                <div className="text-left">
+                  <p className="text-xs font-bold text-on-surface">Apunte Técnico</p>
+                  <p className="text-[10px] text-on-surface-variant">pH, CE, manejo...</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* === SUB-TAB: COSECHA === */}
+        {cultivoSubTab === 'cosecha' && (
+          <div className="max-w-xl mx-auto space-y-3">
+            {/* Sub-tabs Selector: Registrar vs Historial */}
+            <div className="flex items-center justify-center p-1 bg-surface-container-high rounded-2xl border border-outline-variant/20">
+              <button
+                type="button"
+                onClick={() => setHarvestSubTab('registrar')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  harvestSubTab === 'registrar'
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nueva Cosecha</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHarvestSubTab('historial')}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  harvestSubTab === 'historial'
+                    ? 'bg-primary text-on-primary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <History className="w-4 h-4" />
+                <span>Lotes ({harvests.length})</span>
+              </button>
+            </div>
+
+            {harvestSubTab === 'registrar' ? (
+              <div className="bg-surface-container-lowest rounded-3xl p-5 sm:p-6 shadow-md border border-outline-variant/30 text-center space-y-4">
+                <div>
+                  <div className="w-12 h-12 rounded-2xl bg-secondary-container text-on-secondary-container mx-auto flex items-center justify-center shadow-xs mb-2">
+                    <Package className="w-6 h-6 text-secondary" />
+                  </div>
+                  <h2 className="text-xl font-black text-on-surface">
+                    Registrar cosecha
+                  </h2>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Cargue las cajas cosechadas hoy en {currentZone.name}
+                  </p>
+                  <div className="mt-2 inline-block">
+                    <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-bold px-3 py-1 rounded-full border border-emerald-400/40">
+                      Lote: {currentBatch?.batchCode || 'TOM-2026-088'}
+                    </span>
+                  </div>
+                </div>
+
+                {harvestSuccessMessage ? (
+                  <div className="py-6 space-y-2 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl p-4 border border-emerald-500/30">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto animate-bounce" />
+                    <h4 className="text-base font-bold text-on-surface">¡Cosecha Guardada!</h4>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                      {harvestSuccessMessage}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 pt-1">
+                    {/* Counter simple */}
+                    <div className="flex items-center justify-center gap-4 bg-surface-container-high/60 p-3.5 rounded-2xl border border-outline-variant/20">
+                      <button
+                        type="button"
+                        onClick={() => setBoxCount(Math.max(1, boxCount - 1))}
+                        className="w-14 h-14 rounded-xl bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95 min-h-[44px]"
+                        aria-label="Restar una caja"
+                      >
+                        <Minus className="w-6 h-6" />
+                      </button>
+                      <div className="w-28 text-center">
+                        <span className="text-5xl font-black text-primary font-mono block">
+                          {boxCount}
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">
+                          Cajas
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBoxCount(boxCount + 1)}
+                        className="w-14 h-14 rounded-xl bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95 min-h-[44px]"
+                        aria-label="Sumar una caja"
+                      >
+                        <Plus className="w-6 h-6" />
+                      </button>
+                    </div>
+
+                    {/* Total Estimado */}
+                    <div className="bg-primary/10 rounded-2xl p-3.5 flex items-center justify-between border border-primary/20">
+                      <span className="text-sm font-semibold text-on-surface">Total estimado:</span>
+                      <span className="text-2xl font-black text-primary font-mono">
+                        {boxCount * estimatedKgPerBox} kg
                       </span>
                     </div>
+
+                    {/* Botón Principal */}
                     <button
                       type="button"
-                      onClick={() => setBoxCount(boxCount + 1)}
-                      className="w-12 h-12 rounded-xl bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-xs cursor-pointer active:scale-95 min-h-[44px]"
-                      aria-label="Sumar una caja"
+                      onClick={handleSaveHarvest}
+                      className="w-full min-h-[52px] py-3.5 px-4 rounded-2xl bg-primary text-on-primary font-bold text-base shadow-md hover:bg-primary-container hover:text-on-primary-container transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
                     >
-                      <Plus className="w-6 h-6" />
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Registrar {boxCount} cajas</span>
                     </button>
                   </div>
-
-                  {/* Total Estimado */}
-                  <div className="bg-primary/10 rounded-2xl p-3.5 flex items-center justify-between border border-primary/20 text-xs">
-                    <span className="font-semibold text-on-surface">
-                      Total neto estimado:
-                    </span>
-                    <span className="text-lg font-black text-primary font-mono">
-                      {boxCount * estimatedKgPerBox} kg
-                    </span>
-                  </div>
-
-                  {/* Botón Principal */}
-                  <button
-                    type="button"
-                    onClick={handleSaveHarvest}
-                    className="w-full min-h-[48px] py-3.5 px-4 rounded-2xl bg-primary text-on-primary font-bold text-sm shadow-md hover:bg-primary-container hover:text-on-primary-container transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Registrar {boxCount} cajas</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Sub-tab: Historial de Cosechas (CRUD - Read, Update, Delete) */
-            <div className="bg-surface-container-lowest rounded-3xl p-5 shadow-md border border-outline-variant/30 space-y-3">
-              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
-                <div className="flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-secondary" />
-                  <h3 className="font-bold text-sm text-on-surface">
-                    Lotes Cosechados Registrados
-                  </h3>
-                </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">
-                  {harvests.reduce((acc, h) => acc + h.unitsCount, 0)} cajas totales
-                </span>
+                )}
               </div>
-
-              {harvests.length === 0 ? (
-                <p className="text-xs text-on-surface-variant text-center py-6">
-                  No hay registros de cosecha guardados aún.
-                </p>
-              ) : (
-                <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
-                  {harvests.map((h) => {
-                    const hDate = new Date(h.harvestedAt).toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'es-PY');
-                    return (
-                      <div
-                        key={h.id}
-                        className="bg-surface-container-high/60 hover:bg-surface-container-high p-3.5 rounded-2xl border border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono font-bold text-xs text-on-surface">
-                              {h.harvestCode}
-                            </span>
-                            <span className="px-2 py-0.2 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                              {h.qualityGrade}
-                            </span>
-                            <span className="text-[11px] text-on-surface-variant font-mono">
-                              {hDate}
-                            </span>
-                          </div>
-                          <p className="text-xs text-on-surface-variant">
-                            Operador: <strong className="text-on-surface">{h.operatorId}</strong> • Descarte: {h.cullsKg || 0} kg
-                          </p>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-outline-variant/10">
-                          <div className="text-right font-mono">
-                            <span className="text-sm font-black text-primary block">
-                              {h.netWeightKg.toFixed(1)} kg
-                            </span>
-                            <span className="text-[10px] text-on-surface-variant font-bold">
-                              {h.unitsCount} cajas
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleStartEditHarvest(h)}
-                              title="Editar cosecha"
-                              className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-highest text-emerald-700 dark:text-emerald-300 transition-colors cursor-pointer"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeletingHarvest(h)}
-                              title="Eliminar cosecha"
-                              className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-highest text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+            ) : (
+              /* Sub-tab: Historial de Cosechas */
+              <div className="bg-surface-container-lowest rounded-3xl p-4 shadow-md border border-outline-variant/30 space-y-3">
+                <div className="flex items-center justify-between pb-3 border-b border-outline-variant/20">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-5 h-5 text-secondary" />
+                    <h3 className="font-bold text-sm text-on-surface">Lotes Cosechados</h3>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container">
+                    {harvests.reduce((acc, h) => acc + h.unitsCount, 0)} cajas totales
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
+                {harvests.length === 0 ? (
+                  <p className="text-xs text-on-surface-variant text-center py-6">
+                    No hay registros de cosecha guardados aún.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
+                    {harvests.map((h) => {
+                      const hDate = new Date(h.harvestedAt).toLocaleDateString(lang === 'pt-BR' ? 'pt-BR' : 'es-PY');
+                      return (
+                        <div
+                          key={h.id}
+                          className="bg-surface-container-high/60 p-3.5 rounded-2xl border border-outline-variant/20 flex items-center justify-between gap-3"
+                        >
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono font-bold text-xs text-on-surface">{h.harvestCode}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                {h.qualityGrade}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-on-surface-variant font-mono">{hDate}</p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right font-mono">
+                              <span className="text-sm font-black text-primary block">{h.netWeightKg.toFixed(1)} kg</span>
+                              <span className="text-[10px] text-on-surface-variant font-bold">{h.unitsCount} cajas</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditHarvest(h)}
+                                className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-highest text-emerald-700 dark:text-emerald-300 transition-colors cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeletingHarvest(h)}
+                                className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-highest text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* === SUB-TAB: APUNTE TÉCNICO === */}
+        {cultivoSubTab === 'apunte' && (
+          <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/30 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-700 text-white mx-auto flex items-center justify-center shadow-xs">
+              <FilePenLine className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-on-surface">Cargar Apunte Técnico</h3>
+              <p className="text-xs text-on-surface-variant mt-1">
+                Registre nutrición (pH/CE), sanidad fitosanitaria o manejo cultural
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { type: 'ph_ec_manual' as const, label: '🧪 Nutrición', sub: 'pH / CE / Fórmula' },
+                { type: 'fitossanidade' as const, label: '🛡️ Sanidad', sub: 'Plagas / Bioinsumo' },
+                { type: 'poda_manejo' as const, label: '✂️ Manejo', sub: 'Poda / Tutorado' }
+              ].map((item) => (
+                <button
+                  key={item.type}
+                  type="button"
+                  onClick={() => handleOpenCreateEntry(item.type)}
+                  className="min-h-[72px] p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/50 dark:border-emerald-800/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer active:scale-95"
+                >
+                  <span className="text-lg">{item.label.split(' ')[0]}</span>
+                  <span className="text-[11px] font-bold text-on-surface">{item.label.split(' ').slice(1).join(' ')}</span>
+                  <span className="text-[9px] text-on-surface-variant">{item.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* =========================================================
           5. MODALES (Historial completo, Certificado, Cosecha rápida, Apunte técnico)
